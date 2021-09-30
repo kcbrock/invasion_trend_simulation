@@ -1,0 +1,77 @@
+---
+title: "Simstudy-PART 1-Hypothetical_Species_Creation"
+author: "Kelsey"
+date: "9/12/2021"
+output: html_document
+---
+
+```{r, }
+require(knitr)
+```
+```{r}
+#knitr::opts_knit$set(root.dir = "C:/Users/Kelsey/Documents/codingwork/simulation_study") #set the working directory
+```
+```{r}
+#get the needed packages
+if(!require("pacman")){
+	install.packages("pacman")
+	library(pacman)}
+p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np")
+```
+
+
+### Hypothetical Reality = Species are naturalizing at a  linear rate
+#### Step 1: Build Hypothetical Reality - Creating Species
+
+Here, I'm going to create 1000 hypothetical species that naturalized between 1920 and 2020 using a random number generator where each year has an equal chance of coming up. 
+
+```{r}
+ #creating the naturalized species, rounding to the nearest whole number (eg. year 1999 instead of 1999.433)
+ sim_spp <- round(runif(1000, min = 1920, max = 2019), digits = 0)
+ # and sort earliest to latest
+ sim_spp <- as.data.frame(sort(sim_spp, decreasing = FALSE))
+ #renaming the columns
+ colnames(sim_spp) <- "Naturalization_Year"
+ #naming the species a number (1 through 1000)
+ sim_spp$Species_IDNo <- seq(from = 1, to = nrow(sim_spp))
+```
+
+ This histogram represents a scenario where the number of species varies per year, but there's no trend (increasing or decreasing) in he number naturalizing over time.
+
+ #### Step 2: Simulate Hypothetical Reality - Creating Species Accumulation Curve
+ When, plotted as a species accumulation curve over time, it looks linear, like this:
+```{r}
+ #just making a vector of years from 1920 to 2020
+ alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+ colnames(alltheyears) <- "Year"
+
+ #grouping my simulated species by the year they naturalized
+ year_count <- as.data.frame(table(sim_spp$Naturalization_Year)) %>%
+ # and renaming columns
+   dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
+
+ #merging with all the years
+ year_count <-merge(alltheyears, year_count, all = TRUE)
+ #making the NA's become 0s, because 0 new records were reported in those years
+ year_count[is.na(year_count)] = 0
+
+ #calculating species accumulation over time
+ accumulated <- accumulate(year_count$Taxa_Naturalized, sum)
+ accumulated <- cbind(year_count, accumulated)
+ accumulated
+```
+
+```{r}
+mean(accumulated$Taxa_Naturalized)
+```
+```{r}
+hist(accumulated$Taxa_Naturalized)
+```
+```{r}
+hist(accumulated$Year)
+```
+
+```{r}
+ write.csv(sim_spp, file = "sim_spp.csv", row.names = FALSE)
+ write.csv(accumulated, file = "accumulated.csv", row.names = FALSE)
+```
