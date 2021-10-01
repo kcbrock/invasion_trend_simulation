@@ -30,6 +30,13 @@ accumulated
 #accumulated$Taxa_Naturalized_centered <- accumulated$Taxa_Naturalized - mean(accumulated$Taxa_Naturalized)
 plot(Taxa_Naturalized ~  Year, data = accumulated)
 ```
+```{r}
+#accumulated$Taxa_Naturalized_centered <- accumulated$Taxa_Naturalized - mean(accumulated$Taxa_Naturalized)
+hist(sim_spp$Naturalization_Year)
+```
+
+
+
 
 ### Changepoint Analysis
 
@@ -37,9 +44,6 @@ plot(Taxa_Naturalized ~  Year, data = accumulated)
 a2 <- changepoint::cpt.meanvar(accumulated$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
 ```
 
-```{r}
-changepoint::cpts(a2) + (accumulated_A$Year[1] -1)
-```
 ```{r}
 changepoint::plot(a2)
 ```
@@ -66,7 +70,7 @@ Simulate the lag between introduction and naturalization
 
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -89,7 +93,7 @@ Then, simulate the lag between naturalization and detection
 
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -110,7 +114,7 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 Second, simulate the lag between detection and evidence collection
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -132,7 +136,7 @@ third, simulate the lag between vouchering and identification
 
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -153,7 +157,7 @@ colnames(Vouch_ID_Lag) <- "Vouch_ID_Lag"
 Then, simulate the lag between IDing and reporting
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -175,7 +179,7 @@ Then, simulate the lag between reporting  and when someone makes a resource that
 let's say this takes around 2 years, with some taking longer, up to 10 years
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -231,304 +235,303 @@ sim_spp1_crop <- subset(sim_spp1, Report_Year < 2020)
 ```
 
 
-<!-- ## Step 4. Analyse Trends - A) Voucher Year  -->
-<!-- ```{r} -->
-<!-- #just making a vector of years from 1920 to 2020 -->
-<!-- alltheyears <- as.data.frame(seq(from = 1920, to = 2019)) -->
-<!-- colnames(alltheyears) <- "Year" -->
+## Step 4. Analyse Trends - A) Voucher Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
 
-<!-- #grouping my simulated species by the year they we vouchered -->
-<!-- year_count <- as.data.frame(table(sim_spp1_crop$Voucher_Year)) %>% -->
-<!-- # and renaming columns -->
-<!--   dplyr::rename(Year = Var1, Taxa_Vouchered = Freq) -->
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(sim_spp1_crop$Voucher_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Vouchered = Freq)
 
-<!-- #merging with all the years -->
-<!-- year_count <-merge(alltheyears, year_count, all = TRUE) -->
-<!-- #making the NA's become 0s, because 0 new species were vouchered in those years -->
-<!-- year_count[is.na(year_count)] = 0 -->
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
 
-<!-- #calculating species accumulation over time -->
-<!-- accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum) -->
-<!-- accumulated_A <- cbind(year_count, accumulated_A) -->
-<!-- accumulated_A -->
-<!-- ``` -->
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+accumulated_A
+```
 
-<!-- ```{r} -->
-<!-- #plot(Taxa_Vouchered ~ Year, data = accumulated_A) -->
-<!-- #abline(v = 1939, col = "red") -->
-<!-- #abline(v = 1998, col = "red") -->
-<!-- ``` -->
-
-
-<!-- I wonder if this indicates that I should use changepoint.np ? The non-para one?  I'll deal with that when it gets published. -->
-
-<!-- #### Changepoints -->
-
-<!-- ```{r} -->
-<!-- plot(accumulated_A$Taxa_Vouchered) -->
-<!-- ``` -->
+```{r}
+#plot(Taxa_Vouchered ~ Year, data = accumulated_A)
+#abline(v = 1939, col = "red")
+#abline(v = 1998, col = "red")
+```
 
 
-<!-- ```{r} -->
-<!-- a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
-<!-- ``` -->
+I wonder if this indicates that I should use changepoint.np ? The non-para one?  I'll deal with that when it gets published.
 
-<!-- ```{r} -->
-<!-- plot(a1, diagnostic = TRUE) -->
-<!-- ``` -->
-<!-- look for the elbow (4-5 is good here) -->
+#### Changepoints
 
-<!-- ```{r} -->
-<!-- selectedcp = 4 -->
-<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
-<!-- changepoint::plot(a1, ncpts = selectedcp) -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1) -->
-<!-- ``` -->
-<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
-
-<!-- ```{r} -->
-<!-- firstrow = 4 -->
-<!-- secondrow = 5 -->
-<!-- a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
-<!-- ``` -->
-
-<!-- How many species did we lose that hadn't been reported yet? -->
-
-<!-- ```{r} -->
-<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
-
-<!-- changepoint::cpts(a2) + (accumulated_A$Year[1] -1) -->
-
-<!-- changepoint::param.est(a2) -->
-<!-- ``` -->
-<!-- ```{r} -->
-<!-- changepoint::plot(a2) -->
-<!-- ``` -->
-<!-- ## Step 5. Analyse Trends - B) Report Year  -->
-<!-- ```{r} -->
-<!-- #just making a vector of years from 1920 to 2020 -->
-<!-- alltheyears <- as.data.frame(seq(from = 1920, to = 2019)) -->
-<!-- colnames(alltheyears) <- "Year" -->
-
-<!-- #grouping my simulated species by the year they were reported -->
-<!-- year_count <- as.data.frame(table(sim_spp1_crop$Report_Year)) %>% -->
-<!-- # and renaming columns -->
-<!--   dplyr::rename(Year = Var1, Taxa_Reported = Freq) -->
-
-<!-- #merging with all the years -->
-<!-- year_count <-merge(alltheyears, year_count, all = TRUE) -->
-<!-- #making the NA's become 0s, because 0 new species were vouchered in those years -->
-<!-- year_count[is.na(year_count)] = 0 -->
-<!-- #calculating species accumulation over time -->
-<!-- accumulated_B <- accumulate(year_count$Taxa_Reported, sum) -->
-<!-- accumulated_B <- cbind(year_count, accumulated_B) -->
-<!-- ``` -->
+```{r}
+plot(accumulated_A$Taxa_Vouchered)
+```
 
 
-<!-- #### Changepoints -->
-<!-- ```{r} -->
-<!-- plot(accumulated_B$Taxa_Reported) -->
-<!-- ``` -->
+```{r}
+a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+plot(a1, diagnostic = TRUE)
+```
+look for the elbow (4-5 is good here)
+
+```{r}
+selectedcp = 4
+#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(a1, ncpts = selectedcp)
+```
+
+```{r}
+changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
+```
+okay, now run it for a specific penalty level, to get the desired change point #
+
+```{r}
+firstrow = 4
+secondrow = 5
+a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+How many species did we lose that hadn't been reported yet?
+
+```{r}
+nrow(sim_spp1) -nrow(sim_spp1_crop)
+
+changepoint::cpts(a2) + (accumulated_A$Year[1] -1)
+
+changepoint::param.est(a2)
+```
+```{r}
+changepoint::plot(a2)
+```
+## Step 5. Analyse Trends - B) Report Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they were reported
+year_count <- as.data.frame(table(sim_spp1_crop$Report_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Reported = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+#calculating species accumulation over time
+accumulated_B <- accumulate(year_count$Taxa_Reported, sum)
+accumulated_B <- cbind(year_count, accumulated_B)
+```
 
 
-<!-- ```{r} -->
-<!-- b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- plot(b1, diagnostic = TRUE) -->
-<!-- ``` -->
-<!-- look for the elbow (4-5 is good here) -->
-
-<!-- ```{r} -->
-<!-- selectedcp = 2 -->
-<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
-<!-- changepoint::plot(b1, ncpts = selectedcp) -->
-<!-- ``` -->
-
-<!-- ```{r} -->
-<!-- changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
-<!-- ``` -->
-<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
-
-<!-- ```{r} -->
-<!-- firstrow = 5 -->
-<!-- secondrow =  firstrow + 1 -->
-<!-- b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
-<!-- ``` -->
-
-<!-- How many species did we lose that hadn't been reported yet? -->
-
-<!-- ```{r} -->
-<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
-
-<!-- changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
-
-<!-- changepoint::param.est(b2) -->
-<!-- ``` -->
-<!-- ```{r} -->
-<!-- changepoint::plot(b2) -->
-<!-- ``` -->
+#### Changepoints
+```{r}
+plot(accumulated_B$Taxa_Reported)
+```
 
 
-<!-- ## Step 6. Analyse Trends - C) Intro Year  -->
-<!-- ```{r} -->
-<!-- #just making a vector of years from 1920 to 2020 -->
-<!-- alltheyears <- as.data.frame(seq(from = 1920, to = 2019)) -->
-<!-- colnames(alltheyears) <- "Year" -->
+```{r}
+b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
 
-<!-- #grouping my simulated species by the year they were reported -->
-<!-- year_count <- as.data.frame(table(sim_spp1_crop$Intro_Year)) %>% -->
-<!-- # and renaming columns -->
-<!--   dplyr::rename(Year = Var1, Taxa_Introduced = Freq) -->
-<!-- #year_count -->
+```{r}
+plot(b1, diagnostic = TRUE)
+```
+look for the elbow (4-5 is good here)
 
-<!-- #merging with all the years -->
-<!-- year_count <-merge(alltheyears, year_count, all = TRUE) -->
-<!-- #making the NA's become 0s, because 0 new species were vouchered in those years -->
-<!-- year_count[is.na(year_count)] = 0 -->
-<!-- #calculating species accumulation over time -->
-<!-- accumulated_C <- accumulate(year_count$Taxa_Introduced, sum) -->
-<!-- accumulated_C <- cbind(year_count, accumulated_C) -->
-<!-- accumulated_C  -->
-<!-- ``` -->
+```{r}
+selectedcp = 2
+#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(b1, ncpts = selectedcp)
+```
+
+```{r}
+changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1)
+```
+okay, now run it for a specific penalty level, to get the desired change point #
+
+```{r}
+firstrow = 1
+secondrow =  firstrow + 1
+b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+How many species did we lose that hadn't been reported yet?
+
+```{r}
+nrow(sim_spp1) -nrow(sim_spp1_crop)
+
+changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1)
+
+changepoint::param.est(b2)
+```
+```{r}
+changepoint::plot(b2)
+```
 
 
-<!-- #### Changepoints -->
-<!-- ```{r} -->
-<!-- plot(accumulated_C$Taxa_Introduced) -->
-<!-- ``` -->
+## Step 6. Analyse Trends - C) Intro Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they were reported
+year_count <- as.data.frame(table(sim_spp1_crop$Intro_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Introduced = Freq)
+#year_count
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+#calculating species accumulation over time
+accumulated_C <- accumulate(year_count$Taxa_Introduced, sum)
+accumulated_C <- cbind(year_count, accumulated_C)
+accumulated_C
+```
 
 
-<!-- ```{r} -->
-<!-- c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
-<!-- ``` -->
+#### Changepoints
+```{r}
+plot(accumulated_C$Taxa_Introduced)
+```
 
-<!-- ```{r} -->
-<!-- plot(c1, diagnostic = TRUE) -->
-<!-- ``` -->
-<!-- look for the elbow (4-5 is good here) -->
 
-<!-- ```{r} -->
-<!-- selectedcp = 3 -->
-<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
-<!-- changepoint::plot(c1, ncpts = selectedcp) -->
-<!-- ``` -->
+```{r}
+c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
 
-<!-- ```{r} -->
-<!-- changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
-<!-- ``` -->
-<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+```{r}
+plot(c1, diagnostic = TRUE)
+```
+look for the elbow (4-5 is good here)
 
-<!-- ```{r} -->
-<!-- firstrow = 4 -->
-<!-- secondrow = 5 -->
-<!-- c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
-<!-- ``` -->
+```{r}
+selectedcp = 1
+#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(c1, ncpts = selectedcp)
+```
 
-<!-- How many species did we lose that hadn't been reported yet? -->
+```{r}
+changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1)
+```
+okay, now run it for a specific penalty level, to get the desired change point #
 
-<!-- ```{r} -->
-<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+```{r}
+firstrow = 1
+secondrow = 2
+c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
 
-<!-- changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+How many species did we lose that hadn't been reported yet?
 
-<!-- changepoint::param.est(c2) -->
-<!-- ``` -->
-<!-- ```{r} -->
-<!-- changepoint::plot(c2) -->
-<!-- ``` -->
+```{r}
+nrow(sim_spp1) -nrow(sim_spp1_crop)
 
-<!-- ## Step 6. Analyse Trends - D) Compiled Year  -->
-<!-- ```{r} -->
-<!-- #just making a vector of years from 1920 to 2020 -->
-<!-- alltheyears <- as.data.frame(seq(from = 1920, to = 2019)) -->
-<!-- colnames(alltheyears) <- "Year" -->
+changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1)
 
-<!-- #grouping my simulated species by the year they were reported -->
-<!-- year_count <- as.data.frame(table(sim_spp1_crop$Compile_Year)) %>% -->
-<!-- # and renaming columns -->
-<!--   dplyr::rename(Year = Var1, Taxa_Compiled = Freq) -->
-<!-- year_count -->
+changepoint::param.est(c2)
+```
+```{r}
+changepoint::plot(c2)
+```
 
-<!-- #merging with all the years -->
-<!-- year_count <-merge(alltheyears, year_count, all = TRUE) -->
-<!-- #making the NA's become 0s, because 0 new species were vouchered in those years -->
-<!-- year_count[is.na(year_count)] = 0 -->
-<!-- #calculating species accumulation over time -->
-<!-- accumulated_D <- accumulate(year_count$Taxa_Compiled, sum) -->
-<!-- accumulated_D <- cbind(year_count, accumulated_D) -->
-<!-- #accumulated_D  -->
-<!-- ``` -->
+## Step 6. Analyse Trends - D) Compiled Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
 
-<!-- ```{r} -->
-<!-- #making into a single dataframe -->
-<!-- accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized) -->
-<!-- accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered) -->
-<!-- accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported) -->
-<!-- accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced) -->
-<!-- accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled) -->
-<!-- accumulated$Analysis_Type <- "Hypothetical Naturalization Date" -->
-<!-- accumulated_A$Analysis_Type <- "Evidence Collection Date" -->
-<!-- accumulated_B$Analysis_Type <- "Report Date" -->
-<!-- accumulated_C$Analysis_Type <- "Introduction Date" -->
-<!-- accumulated_D$Analysis_Type <- "Compiled Date" -->
+#grouping my simulated species by the year they were reported
+year_count <- as.data.frame(table(sim_spp1_crop$Compile_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Compiled = Freq)
+year_count
 
-<!-- accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D) -->
-<!-- accumulated_A_B_C_D -->
-<!-- ``` -->
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+#calculating species accumulation over time
+accumulated_D <- accumulate(year_count$Taxa_Compiled, sum)
+accumulated_D <- cbind(year_count, accumulated_D)
+#accumulated_D
+```
 
-<!-- ```{r} -->
-<!-- # DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species)) -->
-<!-- # DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date") -->
-<!-- # #plotting total species accumulation over time -->
-<!-- # ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) + -->
-<!-- #   geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) + -->
-<!-- #   scale_color_viridis(discrete = TRUE) + -->
-<!-- #   scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) + -->
-<!-- #   guides(colour = guide_legend(reverse=T)) + -->
-<!-- #  theme_classic() + -->
-<!-- #   labs(title = "Scenario1 Nat Rate", x = "Year", y = "Number of Species") -->
-<!-- # ggsave(filename = "Scenario1_ rate.png", device = "png", scale = 1, width =6, dpi = 600) -->
-<!-- ``` -->
+```{r}
+#making into a single dataframe
+accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered)
+accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
+accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
+accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
+accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
+accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated_B$Analysis_Type <- "Report Date"
+accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_D$Analysis_Type <- "Compiled Date"
 
-<!-- ```{r} -->
-<!-- DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species)) -->
-<!-- DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date") -->
-<!-- #DATA <- subset(DATA, DATA$Analysis_Type != "Report Date") -->
-<!-- #plotting total species accumulation over time -->
-<!-- ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) + -->
-<!--   geom_line( size=1.5, alpha=0.65) + -->
-<!--   scale_color_viridis(discrete = TRUE) + -->
-<!--   scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) + -->
-<!--   guides(colour = guide_legend(reverse=T)) + -->
-<!--  theme_classic() + -->
-<!--   theme(legend.title=element_blank()) + -->
-<!--   labs(title = "Constant Lag Scenario", x = "Year", y = "Number of Species") -->
-<!-- ggsave(filename = "ConstantLagScenario.png", device = "png", scale = 1, width =6, dpi = 600) -->
-<!-- ``` -->
+accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
+accumulated_A_B_C_D
+```
+
+```{r}
+# DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+# DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+# #plotting total species accumulation over time
+# ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) +
+#   geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) +
+#   scale_color_viridis(discrete = TRUE) +
+#   scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+#   guides(colour = guide_legend(reverse=T)) +
+#  theme_classic() +
+#   labs(title = "Scenario1 Nat Rate", x = "Year", y = "Number of Species")
+# ggsave(filename = "Scenario1_ rate.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+```{r}
+DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+#DATA <- subset(DATA, DATA$Analysis_Type != "Report Date")
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) +
+  geom_line( size=1.5, alpha=0.65) +
+  scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank()) +
+  labs(title = "Constant Lag Scenario", x = "Year", y = "Number of Species")
+ggsave(filename = "ConstantLagScenario.png", device = "png", scale = 1, width =6, dpi = 600)
+```
 
 Important finding:  trying to approximate the date of introduction versus the date of naturalization requires more truncation of the time window (although by how long, no one knows).
 
 
-## SCENARIO 2: DATA PROCESSING LAGS ARE DECREASING OVER TIME
+## SCENARIO 2: DATA PROCESSING LAGS ARE CONSTANTLY DECREASING OVER TIME
 
-For this scenario, let's say that the sum of all the lags is somewhere between 0 and about 15 years, with most species having a total lag time of 5-7 years and a lag time of 0 isn't really possible
 
 ```{r}
 sim_spp2 <- sim_spp
+sim_spp2
 ```
-
 
 ##### 3.0
 Simulate the lag between introduction and naturalization
 
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -538,19 +541,20 @@ Intro_Nat_Lag <- subset(Intro_Nat_Lag, Intro_Nat_Lag >=0 & Intro_Nat_Lag <=50)
 Intro_Nat_Lag <- as.data.frame(sample(Intro_Nat_Lag$Intro_Nat_Lag, 1000))
 colnames(Intro_Nat_Lag) <- "Intro_Nat_Lag"
 # #plotting histogram
-# ♥ggplot(Intro_Nat_Lag, aes(x = Intro_Nat_Lag)) +
+# ggplot(Intro_Nat_Lag, aes(x = Intro_Nat_Lag)) +
 #   geom_histogram(binwidth = 1) +
 #   theme_classic()
 # summary(Intro_Nat_Lag)
 # #Nat_Detect_Lag
 ```
 
+
 ##### 3.1
 Then, simulate the lag between naturalization and detection
-let's say this takes around 5 years, with some taking a very long time 
+
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -568,10 +572,10 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 ```
 ##### 3.2
 Second, simulate the lag between detection and evidence collection
-let's say this takes around 1 years, with some taking longer, up to 5 years
+
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -589,27 +593,24 @@ colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
 ```
 ##### 3.3
 third, simulate the lag between vouchering and identification
-let's say this takes around 1 years, with some taking longer, up to 10 years
+this is where it starts to increase
 
 ```{r}
 alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
 colnames(alltheyears) <- "Year"
 
-allthemeans <- as.data.frame(seq(from = 35, to = 5, length.out = nrow(alltheyears))) 
+allthemeans <- as.data.frame(seq(from = 10, to = 1, length.out = nrow(alltheyears))) 
 colnames(allthemeans) <- "xi"
 
 #alltheskews <- as.data.frame(seq(from = 2.5, to = 28,  length.out = nrow(alltheyears))) 
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
-
 paramdf <- merge(sim_spp2, paramdf, by.x = "Naturalization_Year", by.y = "Year", all.x = TRUE, all.y = FALSE) %>% dplyr::select(Naturalization_Year, xi, alpha, omega)
-
 ```
-
 
 ```{r}
 get_lag <- function(x, o, a) {  
@@ -622,24 +623,27 @@ Vouch_ID_Lag <- mapply(x = paramdf$xi, o =paramdf$omega, a = paramdf$alpha, FUN 
  Vouch_ID_Lag <- as.data.frame(Vouch_ID_Lag)
 ```
 
+##### 3.3
+third, simulate the lag between identification & reporting
+this is where it starts to increase constantly
+
 ```{r}
 alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
 colnames(alltheyears) <- "Year"
 
-allthemeans <- as.data.frame(seq(from = 20, to = 1, length.out = nrow(alltheyears))) 
+allthemeans <- as.data.frame(seq(from = 10, to = 1, length.out = nrow(alltheyears))) 
 colnames(allthemeans) <- "xi"
 
 #alltheskews <- as.data.frame(seq(from = 2.5, to = 28,  length.out = nrow(alltheyears))) 
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 paramdf <- merge(sim_spp2, paramdf, by.x = "Naturalization_Year", by.y = "Year", all.x = TRUE, all.y = FALSE) %>% dplyr::select(Naturalization_Year, xi, alpha, omega)
 
 ```
-
 
 ```{r}
 get_lag <- function(x, o, a) {  
@@ -656,30 +660,41 @@ ID_Report_Lag <- mapply(x = paramdf$xi, o =paramdf$omega, a = paramdf$alpha, FUN
 Then, simulate the lag between reporting  and when someone makes a resource that is compiled and formatted
 let's say this takes around 2 years, with some taking longer, up to 10 years
 ```{r}
-mean = 10
-SD = 3
-skew = 0
-params <- sn::cp2dp(c(mean, SD, skew), "SN")
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
 
-Report_Compile_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
-colnames(Report_Compile_Lag) <- "Report_Compile_Lag"
-Report_Compile_Lag <- subset(Report_Compile_Lag, Report_Compile_Lag >=0 )#& ID_Report_Lag <=10)
-Report_Compile_Lag <- as.data.frame(sample(Report_Compile_Lag$Report_Compile_Lag, 1000))
-colnames(Report_Compile_Lag) <- "Report_Compile_Lag"
-# #plotting histogram
-# ggplot(Report_Compile_Lag, aes(x = Report_Compile_Lag)) +
-#   geom_histogram(binwidth = 1) +
-#   theme_classic()
-# summary(Report_Compile_Lag)
+allthemeans <- as.data.frame(seq(from = 10, to = 1, length.out = nrow(alltheyears))) 
+colnames(allthemeans) <- "xi"
+
+#alltheskews <- as.data.frame(seq(from = 2.5, to = 28,  length.out = nrow(alltheyears))) 
+#colnames(alltheskews) <- "alpha"
+
+paramdf <- cbind(alltheyears, allthemeans)
+paramdf$omega <- 2
+paramdf$alpha <- 0
+
+paramdf <- merge(sim_spp2, paramdf, by.x = "Naturalization_Year", by.y = "Year", all.x = TRUE, all.y = FALSE) %>% dplyr::select(Naturalization_Year, xi, alpha, omega)
+
+```
+
+```{r}
+get_lag <- function(x, o, a) {  
+    get_lag <- c() 
+    get_lag <- abs(sample(round(sn::rsn(1000, xi = x, omega =o, alpha = a)), 1))
+}
+
+Report_Compile_Lag <- mapply(x = paramdf$xi, o =paramdf$omega, a = paramdf$alpha, FUN = get_lag)
+ #dists <- cbind(alltheyears, as.data.frame(t(dists)))
+ Report_Compile_Lag <-as.data.frame(Report_Compile_Lag)
+
 ```
 
 So, it may be arbitrary, but the report would compile all species up to that date.
 
 ##### 3.6 Okay, lets add up the lags
-So, the timing of the collected voucher AND final "new record report" is just the year the species naturalized + 0,
 
 ```{r}
-#sim_spp2
+sim_spp2
 # Naturalization Year is already there
 ```
 All created by adding or subtracting from the naturalization year
@@ -689,14 +704,13 @@ sim_spp2$Detect_Year <- sim_spp2$Naturalization_Year + Nat_Detect_Lag$Nat_Detect
 sim_spp2$Voucher_Year <- sim_spp2$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag
 sim_spp2$ID_Year <- sim_spp2$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag
 sim_spp2$Report_Year <- sim_spp2$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
-
-
 sim_spp2$Compile_Year <- sim_spp2$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
 
 
-sim_spp2$All_Processing_Lags <- Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
+sim_spp2$All_Processing_Lags <- Intro_Nat_Lag$Intro_Nat_Lag + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
 #reordering according to Report Year
 sim_spp2 <- sim_spp2 %>% dplyr::select(Species_IDNo, Intro_Year, Naturalization_Year, Detect_Year, Voucher_Year, ID_Year, Report_Year, Compile_Year, All_Processing_Lags)
+sim_spp2
 ```
 
 ### Cropping the Dataset because we can't know about species that haven't been reported yet
@@ -709,11 +723,10 @@ What's the lags look like for all species
 #  # scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
 #   theme_classic()
 # ```
-
-
 You cannot keep all of these species, because hypothetically, it's 2020 and you don't know which species to analyze if they haven't been reported yet
 ```{r}
 sim_spp2_crop <- subset(sim_spp2, Report_Year < 2020)
+sim_spp2_crop
 ```
 
 How many species did we lose that hadn't been reported yet?
@@ -724,36 +737,11 @@ nrow(sim_spp2) -nrow(sim_spp2_crop)
 
 #### Show the number of first records over time, if the researcher were unaware of the unreported species and didn't truncate the time window
 
-```{r}
-records_per_year <- as.data.frame(table(sim_spp2_crop$Naturalization_Year))
-#renaming columns
-records_per_year <- records_per_year %>% dplyr::rename(Year = Var1, records_per_year = Freq)
-
-#plotting histogram
-graph <- records_per_year %>%
-ggplot( aes(x = Year, y=records_per_year))+ 
-    geom_point( ) +
-    scale_fill_viridis(discrete = T) +
-    theme_classic(base_size = 13) +
-    labs(title = "First Record Rate", element_text(size = 13)) +
-  theme(legend.position = "none", axis.text.x = element_blank(), plot.title = element_text(size = 13))
-graph
-
-
-#ggsave(filename = "intropath_v_continent.png", device = "png", scale = 1, width =6, dpi = 600)
-
-```
-```{r}
-plot()
-```
-
-
-Can we find the best model to fit this line?  Look at Seebens' code.
 
 ## Step 4. Analyse Trends - A) Voucher Year 
 ```{r}
 #just making a vector of years from 1920 to 2020
-alltheyears <- as.data.frame(seq(from = 1920, to = 2020))
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they we vouchered
@@ -769,13 +757,57 @@ year_count[is.na(year_count)] = 0
 #calculating species accumulation over time
 accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
 accumulated_A <- cbind(year_count, accumulated_A)
-accumulated_A 
+
+```
+
+
+#### Changepoints
+```{r}
+plot(accumulated_A$Taxa_Vouchered)
+```
+
+```{r}
+a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+plot(a1, diagnostic = TRUE)
+```
+
+```{r}
+selectedcp = 1
+#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(a1, ncpts = selectedcp)
+```
+
+```{r}
+changepoint::cpts.full(a1) + (as.numeric(accumulated_A$Year[[1]]) - 1)
+```
+okay, now run it for a specific penalty level, to get the desired change point #
+
+```{r}
+firstrow = 2
+secondrow =  firstrow + 1
+a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+How many species did we lose that hadn't been reported yet?
+
+```{r}
+nrow(sim_spp2) -nrow(sim_spp2_crop)
+
+changepoint::cpts(a2) + (as.numeric(accumulated_A$Year[[1]]) - 1)
+
+changepoint::param.est(a2)
+```
+```{r}
+changepoint::plot(a2)
 ```
 
 ## Step 5. Analyse Trends - B) Report Year 
 ```{r}
 #just making a vector of years from 1920 to 2020
-alltheyears <- as.data.frame(seq(from = 1920, to = 2020))
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they were reported
@@ -790,13 +822,53 @@ year_count[is.na(year_count)] = 0
 #calculating species accumulation over time
 accumulated_B <- accumulate(year_count$Taxa_Reported, sum)
 accumulated_B <- cbind(year_count, accumulated_B)
-accumulated_B 
+```
+#### Changepoints
+```{r}
+plot(accumulated_B$Taxa_Reported)
 ```
 
+```{r}
+b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+plot(b1, diagnostic = TRUE)
+```
+
+```{r}
+selectedcp = 1
+#changepoint::plot(b1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(b1, ncpts = selectedcp)
+```
+
+```{r}
+changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1)
+```
+okay, now run it for a specific penalty level, to get the desired change point #
+
+```{r}
+firstrow = 1
+secondrow =  firstrow + 1
+b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+How many species did we lose that hadn't been reported yet?
+
+```{r}
+nrow(sim_spp2) -nrow(sim_spp2_crop)
+
+changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1)
+
+changepoint::param.est(b2)
+```
+```{r}
+changepoint::plot(b2)
+```
 ## Step 6. Analyse Trends - C) Intro Year 
 ```{r}
 #just making a vector of years from 1920 to 2020
-alltheyears <- as.data.frame(seq(from = 1920, to = 2020))
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they were reported
@@ -812,14 +884,54 @@ year_count[is.na(year_count)] = 0
 #calculating species accumulation over time
 accumulated_C <- accumulate(year_count$Taxa_Introduced, sum)
 accumulated_C <- cbind(year_count, accumulated_C)
-accumulated_C 
+```
+#### Changepoints 
+```{r}
+plot(accumulated_C$Taxa_Introduced)
 ```
 
+```{r}
+c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+plot(c1, diagnostic = TRUE)
+```
+
+```{r}
+selectedcp = 1
+#changepoint::plot(c1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(c1, ncpts = selectedcp)
+```
+
+```{r}
+changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1)
+```
+okay, now run it for a specific penalty level, to get the desired change point #
+
+```{r}
+firstrow = 1
+secondrow =  firstrow + 1
+c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+How many species did we lose that hadn't been reported yet?
+
+```{r}
+nrow(sim_spp2) -nrow(sim_spp2_crop)
+
+changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1)
+
+changepoint::param.est(c2)
+```
+```{r}
+changepoint::plot(c2)
+```
 
 ## Step 6. Analyse Trends - D) Compiled Year 
 ```{r}
 #just making a vector of years from 1920 to 2020
-alltheyears <- as.data.frame(seq(from = 1920, to = 2020))
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they were reported
@@ -839,7 +951,7 @@ accumulated_D
 ```
 
 ```{r}
-#making into a single dataframe
+#making into a single dataframe so I can graph it
 #accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
 accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered)
 accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
@@ -850,40 +962,40 @@ accumulated_A$Analysis_Type <- "Evidence Collection Date"
 accumulated_B$Analysis_Type <- "Report Date"
 accumulated_C$Analysis_Type <- "Introduction Date"
 accumulated_D$Analysis_Type <- "Compiled Date"
-```
-```{r}
+
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
 accumulated_A_B_C_D
 ```
 
-
-
-```{r}
-DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
-DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
-#plotting total species accumulation over time
-ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) +
-  geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) +
-  scale_color_viridis(discrete = TRUE) +
-  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
- theme_classic() +
-  labs(title = "Scenario 2 Nat Rate", x = "Year", y = "Number of Species")
-ggsave(filename = "Scenario2_ rate.png", device = "png", scale = 1, width =6, dpi = 600)
-```
+# ```{r}
+# DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+# DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+# #plotting total species accumulation over time
+# ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) +
+#   geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) +
+#   scale_color_viridis(discrete = TRUE) +
+#   scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+#  theme_classic() +
+#   labs(title = "Scenario 2 Nat Rate", x = "Year", y = "Number of Species")
+# ggsave(filename = "Scenario2_ rate.png", device = "png", scale = 1, width =6, dpi = 600)
+# ```
 
 ```{r}
 DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
 DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
 #plotting total species accumulation over time
 ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) +
-  geom_line( size=1.5, alpha=0.8) +
+  geom_line( size=1.5, alpha=0.65) +
   scale_color_viridis(discrete = TRUE) +
-  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+  scale_x_continuous(breaks = c(1900, 1920, 1940, 1960, 1980, 2000, 2020)) +
    guides(colour = guide_legend(reverse=T)) +
  theme_classic() +
-  labs(title = "Data Processing Lags Become Shorter Over Time", x = "Year", y = "Number of Species")
-ggsave(filename = "Scenario2.png", device = "png", scale = 1, width =6, dpi = 600)
+  labs(title = "Continuous Shortening of Data Processing Lags", x = "Year", y = "Number of Species")
+ggsave(filename = "ContshorteningDPlags.png", device = "png", scale = 1, width =6, dpi = 600)
 ```
+
+
+
 
 
 ## SCENARIO 3: FIELD SURVEYING LAGS ARE DECREASING OVER TIME
@@ -901,7 +1013,7 @@ Simulate the lag between introduction and naturalization
 
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -934,7 +1046,7 @@ colnames(allthemeans) <- "xi"
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 
@@ -972,7 +1084,7 @@ colnames(allthemeans) <- "xi"
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 paramdf <- merge(sim_spp3, paramdf, by.x = "Naturalization_Year", by.y = "Year", all.x = TRUE, all.y = FALSE) %>% dplyr::select(Naturalization_Year, xi, alpha, omega)
@@ -996,7 +1108,7 @@ third, simulate the lag between vouchering and identification
 let's say this takes around 1 years, with some taking longer, up to 10 years
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -1016,7 +1128,7 @@ Then, simulate the lag between IDing and reporting
 let's say this takes around 2 years, with some taking longer, up to 10 years
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -1040,7 +1152,7 @@ Then, simulate the lag between reporting  and when someone makes a resource that
 let's say this takes around 2 years, with some taking longer, up to 10 years
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -1279,7 +1391,7 @@ Simulate the lag between introduction and naturalization
 
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
@@ -1312,7 +1424,7 @@ colnames(allthemeans) <- "xi"
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 
@@ -1346,7 +1458,7 @@ colnames(allthemeans) <- "xi"
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 
@@ -1381,7 +1493,7 @@ colnames(allthemeans) <- "xi"
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 
@@ -1414,7 +1526,7 @@ colnames(allthemeans) <- "xi"
 #colnames(alltheskews) <- "alpha"
 
 paramdf <- cbind(alltheyears, allthemeans)
-paramdf$omega <- 3
+paramdf$omega <- 2
 paramdf$alpha <- 0
 
 
@@ -1442,7 +1554,7 @@ Then, simulate the lag between reporting  and when someone makes a resource that
 let's say this takes around 2 years, with some taking longer, up to 10 years
 ```{r}
 mean = 10
-SD = 3
+SD = 2
 skew = 0
 params <- sn::cp2dp(c(mean, SD, skew), "SN")
 
