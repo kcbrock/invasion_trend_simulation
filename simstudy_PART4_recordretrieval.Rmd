@@ -358,6 +358,140 @@ accumulated_D <- accumulate(year_count$Taxa_Compiled, sum)
 accumulated_D <- cbind(year_count, accumulated_D)
 accumulated_D
 ```
+#### Changepoint - Evidence Collection
+
+<!-- ```{r} -->
+<!-- plot(accumulated_A$Taxa_Vouchered) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(a1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 4 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(a1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 4 -->
+<!-- secondrow = 5 -->
+<!-- a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(a2) + (accumulated_A$Year[1] -1) -->
+
+<!-- changepoint::param.est(a2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(a2) -->
+<!-- ``` -->
+
+<!-- #### Changepoint - Report Date -->
+<!-- ```{r} -->
+<!-- plot(accumulated_B$Taxa_Reported) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(b1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 2 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(b1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 1 -->
+<!-- secondrow =  firstrow + 1 -->
+<!-- b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
+
+<!-- changepoint::param.est(b2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(b2) -->
+<!-- ``` -->
+
+
+<!-- #### Changepoints - Intro Date -->
+<!-- ```{r} -->
+<!-- plot(accumulated_C$Taxa_Introduced) -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(c1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 1 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(c1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 1 -->
+<!-- secondrow = 2 -->
+<!-- c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+
+<!-- changepoint::param.est(c2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(c2) -->
+<!-- ``` -->
 
 ```{r}
 #making into a single dataframe
@@ -708,6 +842,140 @@ accumulated_D <- accumulate(year_count$Taxa_Compiled, sum)
 accumulated_D <- cbind(year_count, accumulated_D)
 accumulated_D
 ```
+#### Changepoint - Evidence Collection
+
+<!-- ```{r} -->
+<!-- plot(accumulated_A$Taxa_Vouchered) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(a1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 4 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(a1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 4 -->
+<!-- secondrow = 5 -->
+<!-- a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(a2) + (accumulated_A$Year[1] -1) -->
+
+<!-- changepoint::param.est(a2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(a2) -->
+<!-- ``` -->
+
+<!-- #### Changepoint - Report Date -->
+<!-- ```{r} -->
+<!-- plot(accumulated_B$Taxa_Reported) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(b1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 2 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(b1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 1 -->
+<!-- secondrow =  firstrow + 1 -->
+<!-- b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
+
+<!-- changepoint::param.est(b2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(b2) -->
+<!-- ``` -->
+
+
+<!-- #### Changepoints - Intro Date -->
+<!-- ```{r} -->
+<!-- plot(accumulated_C$Taxa_Introduced) -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(c1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 1 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(c1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 1 -->
+<!-- secondrow = 2 -->
+<!-- c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+
+<!-- changepoint::param.est(c2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(c2) -->
+<!-- ``` -->
 
 ```{r}
 #making into a single dataframe
@@ -1102,6 +1370,140 @@ accumulated_D$Analysis_Type <- "Compiled Date"
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
 accumulated_A_B_C_D
 ```
+#### Changepoint - Evidence Collection
+
+<!-- ```{r} -->
+<!-- plot(accumulated_A$Taxa_Vouchered) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(a1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 4 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(a1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 4 -->
+<!-- secondrow = 5 -->
+<!-- a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(a2) + (accumulated_A$Year[1] -1) -->
+
+<!-- changepoint::param.est(a2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(a2) -->
+<!-- ``` -->
+
+<!-- #### Changepoint - Report Date -->
+<!-- ```{r} -->
+<!-- plot(accumulated_B$Taxa_Reported) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(b1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 2 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(b1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 1 -->
+<!-- secondrow =  firstrow + 1 -->
+<!-- b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1) -->
+
+<!-- changepoint::param.est(b2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(b2) -->
+<!-- ``` -->
+
+
+<!-- #### Changepoints - Intro Date -->
+<!-- ```{r} -->
+<!-- plot(accumulated_C$Taxa_Introduced) -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- plot(c1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- look for the elbow (4-5 is good here) -->
+
+<!-- ```{r} -->
+<!-- selectedcp = 1 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(c1, ncpts = selectedcp) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+<!-- ``` -->
+<!-- okay, now run it for a specific penalty level, to get the desired change point # -->
+
+<!-- ```{r} -->
+<!-- firstrow = 1 -->
+<!-- secondrow = 2 -->
+<!-- c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+<!-- ``` -->
+
+<!-- How many species did we lose that hadn't been reported yet? -->
+
+<!-- ```{r} -->
+<!-- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+
+<!-- changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1) -->
+
+<!-- changepoint::param.est(c2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(c2) -->
+<!-- ``` -->
 
 ```{r}
 DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
