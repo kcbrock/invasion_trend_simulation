@@ -1,0 +1,393 @@
+---
+title: "simstudy_PART5_fs_dp_compare"
+author: "Kelsey"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r, }
+require(knitr)
+```
+```{r}
+#get the needed packages
+if(!require("pacman")){
+	install.packages("pacman")
+	library(pacman)}
+p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np")
+```
+```{r}
+sim_spp <- read.csv(file = "sim_spp.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+accumulated <- read.csv(file = "accumulated.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+
+accumulated
+```
+
+```{r}
+#accumulated$Taxa_Naturalized_centered <- accumulated$Taxa_Naturalized - mean(accumulated$Taxa_Naturalized)
+plot(Taxa_Naturalized ~  Year, data = accumulated)
+```
+```{r}
+#accumulated$Taxa_Naturalized_centered <- accumulated$Taxa_Naturalized - mean(accumulated$Taxa_Naturalized)
+hist(sim_spp$Naturalization_Year)
+```
+
+```{r}
+accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+```
+
+```{r}
+a2 <- changepoint::cpt.meanvar(as.numeric(accumulated$Taxa_Naturalized), penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+changepoint::plot(a2)
+```
+```{r}
+changepoint::param.est(a2)
+```
+
+
+
+
+# What if no lags exist??
+
+
+## Simulate Hypothetical Lag Times
+
+For this scenario, let's say that all lags have a mean of 10 years
+
+```{r}
+sim_spp12 <- sim_spp
+```
+
+##### 3.0
+
+Simulate FIELD SURVEYING lags
+
+```{r}
+mean = 0
+SD = 0
+skew = 0
+params <- sn::cp2dp(c(mean, SD, skew), "SN")
+
+FS_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+colnames(FS_Lag) <- "FS_Lag"
+#FS_Lag <- subset(FS_Lag, FS_Lag >=0)
+FS_Lag <- as.data.frame(sample(FS_Lag$FS_Lag, 1000))
+colnames(FS_Lag) <- "FS_Lag"
+
+#plotting histogram
+ ggplot(FS_Lag, aes(x = FS_Lag)) +
+  geom_histogram(binwidth = 1) +
+   theme_classic()
+ summary(FS_Lag)
+FS_Lag
+```
+
+##### 3.1
+Simulate DATA PROCESSING lags
+
+```{r}
+mean = 0
+SD = 0
+skew = 0
+params <- sn::cp2dp(c(mean, SD, skew), "SN")
+
+DP_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+colnames(DP_Lag) <- "DP_Lag"
+#FS_Lag <- subset(FS_Lag, FS_Lag >=0)
+DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+colnames(DP_Lag) <- "DP_Lag"
+
+#plotting histogram
+ ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+   theme_classic()
+ summary(DP_Lag)
+DP_Lag
+```
+
+
+##### 3.6 Okay, lets add up the lags
+So, the timing of the collected voucher AND final "new record report" is just the year the species naturalized + lag,
+
+All created by adding or subtracting from the naturalization year
+```{r}
+sim_spp12$Voucher_Year <- sim_spp12$Naturalization_Year + FS_Lag$FS_Lag
+sim_spp12$Report_Year <- sim_spp12$Naturalization_Year + FS_Lag$FS_Lag + DP_Lag$DP_Lag
+
+sim_spp12 <- sim_spp12 %>% dplyr::select(Species_IDNo,  Naturalization_Year, Voucher_Year,  Report_Year)
+sim_spp12
+```
+
+### Cropping the Dataset because we can't know about species that haven't been reported yet
+
+What's the lags look like for all species
+```{r}
+# #plotting histogram
+# ggplot(sim_spp12, aes(x = All_Processing_Lags)) +
+#   geom_density(fill="#440154FF", color="#e9ecef", alpha=0.6) +
+#  # scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+#   theme_classic()
+```
+
+```{r}
+sim_spp12_crop <- subset(sim_spp12, Report_Year < 2020)
+```
+
+```{r}
+nrow(sim_spp12) -nrow(sim_spp12_crop)
+```
+```{r}
+retrieval_rate = 1
+sampled <- as.data.frame(sample(sim_spp12_crop$Species_IDNo, (nrow(sim_spp12_crop)* retrieval_rate)))
+colnames(sampled) <- "Species_IDNo"
+sim_spp12_crop_sample <- merge(sampled, sim_spp12_crop, by= "Species_IDNo", all.x = TRUE, all.y = FALSE)
+sim_spp12_crop_sample
+```
+
+
+## Step 4. Analyse Trends - A) Voucher Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(sim_spp12_crop_sample$Voucher_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Vouchered = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+accumulated_A
+```
+
+
+#### Changepoint - Evidence Collection
+
+
+```{r}
+plot(accumulated_A$Taxa_Vouchered)
+```
+```{r}
+a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+plot(a1, diagnostic = TRUE)
+```
+```{r}
+selectedcp = 0
+#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(a1, ncpts = selectedcp)
+```
+```{r}
+changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
+```
+```{r}
+firstrow = 2
+secondrow = firstrow +1
+a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+```{r}
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
+
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
+```
+```{r}
+startptindex = 3
+endptindex = 6
+
+print("How many species did we lose that hadn't been reported yet?")
+spplostharvest <- nrow(sim_spp12) -nrow(sim_spp12_crop)
+spplostharvest
+
+spplostretrieval <- nrow(sim_spp12_crop) - nrow(sim_spp12_crop_sample)
+spplostretrieval
+
+print("start seg length, mean, std: ")
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
+
+print("truncated seg length, mean, std:")
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
+print("ending seg length, mean, std:")
+nrow(accumulated_A) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
+```
+```{r}
+changepoint::plot(a2, type='p')
+```
+
+
+
+#### Changepoints - Intro Date
+
+```{r}
+plot(accumulated_C$Taxa_Introduced)
+```
+```{r}
+c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+plot(c1, diagnostic = TRUE)
+```
+```{r}
+selectedcp = 4
+#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+changepoint::plot(c1, ncpts = selectedcp)
+```
+
+```{r}
+changepoint::cpts.full(c1) + as.numeric(accumulated_C$Year[1]) -1
+```
+```{r}
+firstrow = 6
+secondrow = firstrow +1
+c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+chpoints <- c( 0, changepoint::cpts(c2), nrow(accumulated_C))
+chpoints
+chpoints + as.numeric(accumulated_C$Year[1])
+segmeans <- changepoint::param.est(c2)$mean
+segmeans
+segvars <- (changepoint::param.est(c2)$variance)
+sqrt(segvars)
+```
+```{r}
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
+
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
+```
+```{r}
+startptindex = 1
+endptindex = 2
+
+print("How many species did we lose that hadn't been reported yet?")
+spplostharvest <- nrow(sim_spp12) -nrow(sim_spp12_crop)
+spplostharvest
+
+spplostretrieval <- nrow(sim_spp12_crop) - nrow(sim_spp12_crop_sample)
+spplostretrieval
+
+print("start seg length, mean, std: ")
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
+
+print("truncated seg length, mean, std:")
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
+print("ending seg length, mean, std:")
+nrow(accumulated_A) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
+```
+```{r}
+changepoint::plot(c2, type='p')
+```
+
+
+
+```{r}
+#making into a single dataframe
+#accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered)
+accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
+accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
+accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
+accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
+accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated_B$Analysis_Type <- "Report Date"
+accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_D$Analysis_Type <- "Compiled Date"
+
+accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
+accumulated_A_B_C_D
+```
+
+```{r}
+# DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+# DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+# #plotting total species accumulation over time
+# ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) +
+#   geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) +
+#   scale_color_viridis(discrete = TRUE) +
+#   scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+#   guides(colour = guide_legend(reverse=T)) +
+#  theme_classic() +
+#   labs(title = "Scenario10 Nat Rate", x = "Year", y = "Number of Species")
+# ggsave(filename = "Scenario10_ rate.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+```{r}
+DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- subset(DATA, DATA$Analysis_Type != "Report Date")
+DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) +
+  geom_line( size=1.5, alpha=0.70) +
+  scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank()) +
+  labs(title = "33% of naturalized records retrieved", x = "Year", y = "Number of Species")
+ggsave(filename = "33natrecordsretreived", device = "png", scale = 1, width =6, dpi = 600)
+```
+
