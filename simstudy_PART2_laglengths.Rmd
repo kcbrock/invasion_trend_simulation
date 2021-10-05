@@ -48,6 +48,10 @@ changepoint::plot(a2)
 changepoint::param.est(a2)
 ```
 ```{r}
+sqrt(changepoint::param.est(a2)$variance)
+```
+
+```{r}
 accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
 ```
 
@@ -256,7 +260,6 @@ year_count[is.na(year_count)] = 0
 #calculating species accumulation over time
 accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
 accumulated_A <- cbind(year_count, accumulated_A)
-accumulated_A
 ```
 ## Step 5. Analyse Trends - B) Report Year
 ```{r}
@@ -297,7 +300,6 @@ year_count[is.na(year_count)] = 0
 #calculating species accumulation over time
 accumulated_C <- accumulate(year_count$Taxa_Introduced, sum)
 accumulated_C <- cbind(year_count, accumulated_C)
-accumulated_C
 ```
 
 ## Step 6. Analyse Trends - D) Compiled Year
@@ -310,7 +312,6 @@ colnames(alltheyears) <- "Year"
 year_count <- as.data.frame(table(sim_spp1_crop$Compile_Year)) %>%
 # and renaming columns
   dplyr::rename(Year = Var1, Taxa_Compiled = Freq)
-year_count
 
 #merging with all the years
 year_count <-merge(alltheyears, year_count, all = TRUE)
@@ -325,243 +326,248 @@ accumulated_D <- cbind(year_count, accumulated_D)
 
 #### Changepoint - Evidence Collection
 
-```{r}
-plot(accumulated_A$Taxa_Vouchered)
-```
+<!-- ```{r} -->
+<!-- plot(accumulated_A$Taxa_Vouchered) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+
+<!-- plot(a1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- selectedcp = 4 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(a1, ncpts = selectedcp) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- firstrow = 6 -->
+<!-- secondrow = firstrow +1 -->
+<!-- a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
+
+<!-- chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))  -->
+<!-- chpoints -->
+<!-- chpoints + accumulated_A$Year[1] -->
+<!-- segmeans <- changepoint::param.est(a2)$mean -->
+<!-- segmeans -->
+<!-- segvars <- (changepoint::param.est(a2)$variance) -->
+<!-- sqrt(segvars) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8]) -->
+<!-- seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8]) -->
+
+<!-- segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean) -->
+<!-- segwmeans <- segwmeans[!is.na(segwmeans)] -->
+<!-- segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar) -->
+<!-- segwvars <- segwvars[!is.na(segwvars)] -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- startptindex = 3 -->
+<!-- endptindex = 4  -->
+
+<!-- print("How many species did we lose that hadn't been reported yet?") -->
+<!-- spplost <- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+<!-- spplost -->
+
+<!-- print("start seg length, mean, std: ") -->
+<!-- chpoints[startptindex] -->
+<!-- round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2) -->
+<!-- round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2) -->
+
+<!-- print("truncated seg length, mean, std:") -->
+<!-- chpoints[endptindex] - chpoints[startptindex] -->
+<!-- round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2) -->
+
+<!-- print("ending seg length, mean, std:") -->
+<!-- nrow(accumulated_A) - chpoints[endptindex] -->
+<!-- round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(a2, type='p') -->
+<!-- ``` -->
+
+<!-- #### Changepoint - Report Date -->
 
 
-#### Changepoint - Report Date
-```{r}
-a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
+<!-- ```{r} -->
+<!-- plot(accumulated_B$Taxa_Reported) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-plot(a1, diagnostic = TRUE)
-```
-look for the elbow (4-5 is good here)
+<!-- plot(b1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- selectedcp = 2 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(b1, ncpts = selectedcp) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(b1) + (accumulated_B$Year[1] -1) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- firstrow = 4 -->
+<!-- secondrow = firstrow +1 -->
+<!-- b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-selectedcp = 4
-#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
-changepoint::plot(a1, ncpts = selectedcp)
-```
+<!-- chpoints <- c( 0, changepoint::cpts(b2), nrow(accumulated_B))  -->
+<!-- chpoints -->
+<!-- chpoints + accumulated_B$Year[1] -->
+<!-- segmeans <- changepoint::param.est(b2)$mean -->
+<!-- segmeans -->
+<!-- segvars <- (changepoint::param.est(b2)$variance) -->
+<!-- sqrt(segvars) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8]) -->
+<!-- seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8]) -->
 
-```{r}
-changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
-```
-okay, now run it for a specific penalty level, to get the desired change point #
+<!-- segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean) -->
+<!-- segwmeans <- segwmeans[!is.na(segwmeans)] -->
+<!-- segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar) -->
+<!-- segwvars <- segwvars[!is.na(segwvars)] -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- startptindex = 3 -->
+<!-- endptindex = 4  -->
 
-```{r}
-firstrow = 5
-secondrow = firstrow +1
-a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
+<!-- print("How many species did we lose that hadn't been reported yet?") -->
+<!-- spplost <- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+<!-- spplost -->
 
-How many species did we lose that hadn't been reported yet?
+<!-- print("start seg length, mean, std: ") -->
+<!-- chpoints[startptindex] -->
+<!-- round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2) -->
+<!-- round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2) -->
 
-```{r}
-spplost <- nrow(sim_spp1) -nrow(sim_spp1_crop)
-spplost
-chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A)) 
-chpoints
-chpoints + accumulated_A$Year[1]
-segmeans <- changepoint::param.est(a2)$mean
-segmeans
-segvars <- (changepoint::param.est(a2)$variance)
-sqrt(segvars)
-```
+<!-- print("truncated seg length, mean, std:") -->
+<!-- chpoints[endptindex] - chpoints[startptindex] -->
+<!-- round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2) -->
 
+<!-- print("ending seg length, mean, std:") -->
+<!-- nrow(accumulated_B) - chpoints[endptindex] -->
+<!-- round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(b2, type='p') -->
+<!-- ``` -->
 
-```{r}
-seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
-seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
-seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
-seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
-seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
-seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
-seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
-seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
-seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
-seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
-seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
-seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
-seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
-seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
-seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
-seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
+<!-- #### Changepoints - Intro Date -->
 
-segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
-segwmeans <- segwmeans[!is.na(segwmeans)]
-segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
-segwvars <- segwvars[!is.na(segwvars)]
-```
+<!-- ```{r} -->
+<!-- plot(accumulated_C$Taxa_Introduced) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-startptindex = 3
-endptindex = 4 
+<!-- plot(c1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- selectedcp = 4 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(c1, ncpts = selectedcp) -->
+<!-- ``` -->
 
-print("How many species did we lose that hadn't been reported yet?")
-spplost
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(c1) + as.numeric(accumulated_C$Year[1]) -1 -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- firstrow = 2 -->
+<!-- secondrow = firstrow +1 -->
+<!-- c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-print("start seg length, mean, std: ")
-chpoints[startptindex]
-sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex]
-sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex])
+<!-- chpoints <- c( 0, changepoint::cpts(c2), nrow(accumulated_C))  -->
+<!-- chpoints -->
+<!-- chpoints + as.numeric(accumulated_C$Year[1]) -->
+<!-- segmeans <- changepoint::param.est(c2)$mean -->
+<!-- segmeans -->
+<!-- segvars <- (changepoint::param.est(c2)$variance) -->
+<!-- sqrt(segvars) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8]) -->
+<!-- seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8]) -->
 
-print("truncated seg length, mean, std:")
-chpoints[endptindex] - chpoints[startptindex]
-sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])
-sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]))
+<!-- segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean) -->
+<!-- segwmeans <- segwmeans[!is.na(segwmeans)] -->
+<!-- segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar) -->
+<!-- segwvars <- segwvars[!is.na(segwvars)] -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- startptindex = 2 -->
+<!-- endptindex = 3  -->
 
-print("ending seg length, mean, std:")
-nrow(accumulated_A) - chpoints[endptindex]
-sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex])
-sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex]))
+<!-- print("How many species did we lose that hadn't been reported yet?") -->
+<!-- spplost <- nrow(sim_spp1) -nrow(sim_spp1_crop) -->
+<!-- spplost -->
 
-```
-```{r}
-sum(segwmeans[startptindex:(endptindex -1)])
-(chpoints[startptindex]- chpoints[endptindex])
-```
+<!-- print("start seg length, mean, std: ") -->
+<!-- chpoints[startptindex] -->
+<!-- round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2) -->
+<!-- round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2) -->
 
-```{r}
-changepoint::plot(a2, type='p')
-```
+<!-- print("truncated seg length, mean, std:") -->
+<!-- chpoints[endptindex] - chpoints[startptindex] -->
+<!-- round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2) -->
 
-#### Changepoint - Report Date
-```{r}
-plot(accumulated_B$Taxa_Reported)
-```
-
-```{r}
-b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
-
-```{r}
-plot(b1, diagnostic = TRUE)
-```
-look for the elbow (4-5 is good here)
-
-```{r}
-selectedcp = 3
-#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
-changepoint::plot(b1, ncpts = selectedcp)
-```
-
-```{r}
-changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1)
-```
-okay, now run it for a specific penalty level, to get the desired change point #
-
-```{r}
-firstrow = 4
-secondrow =  firstrow + 1
-b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
-
-How many species did we lose that hadn't been reported yet?
-
-```{r}
-changepoint::plot(b2)
-```
-```{r}
-nrow(sim_spp1) -nrow(sim_spp1_crop)
-
-changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1)
-
-changepoint::param.est(b2)
-```
-
-```{r}
-startsegbefore = 1957
-endsegafter = 2020
-
-startseg <- subset(accumulated_B, Year <= startsegbefore)
-truncated <- subset(accumulated_B, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_B, Year >= endsegafter)
-
-print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Reported), 2)
-round(stdev(startseg$Taxa_Reported), 2)
-print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Reported), 2)
-round(stdev(truncated$Taxa_Reported), 2)
-print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Reported), 2)
-round(stdev(endseg$Taxa_Reported), 2)
-```
-
-#### Changepoints - Intro Date
-```{r}
-plot(accumulated_C$Taxa_Introduced)
-```
-
-```{r}
-c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
-
-```{r}
-plot(c1, diagnostic = TRUE)
-```
-look for the elbow (4-5 is good here)
-
-```{r}
-selectedcp = 2
-#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
-changepoint::plot(c1, ncpts = selectedcp)
-```
-
-```{r}
-changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1)
-```
-okay, now run it for a specific penalty level, to get the desired change point #
-
-```{r}
-firstrow = 5
-secondrow = firstrow +1
-c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
-
-How many species did we lose that hadn't been reported yet?
-
-```{r}
-nrow(sim_spp1) -nrow(sim_spp1_crop)
-
-changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1)
-
-changepoint::param.est(c2)
-```
-```{r}
-startsegbefore = as.numeric(accumulated_C$Year[1]) -1
-endsegafter = 1964
-
-startseg <- subset(accumulated_C, Year <= startsegbefore)
-truncated <- subset(accumulated_C, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_C, Year >= endsegafter)
-
-print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Introduced), 2)
-round(stdev(startseg$Taxa_Introduced), 2)
-print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Introduced), 2)
-round(stdev(truncated$Taxa_Introduced), 2)
-print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Introduced), 2)
-round(stdev(endseg$Taxa_Introduced), 2)
-```
-```{r}
-accumulated_C$Year[1]
-```
-
-```{r}
-changepoint::plot(c2, type = "p")
-```
+<!-- print("ending seg length, mean, std:") -->
+<!-- nrow(accumulated_A) - chpoints[endptindex] -->
+<!-- round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(c2, type='p') -->
+<!-- ``` -->
 
 
 ```{r}
@@ -699,10 +705,6 @@ colnames(alltheyears) <- "Year"
 # steady decline
 allthemeans <- as.data.frame(seq(from = 10, to = 0.083, length.out = nrow(alltheyears))) 
 
-#or exponential decline
-
-#allthemeans <- read.csv("expdecline.csv",   header=F, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
-
 colnames(allthemeans) <- "xi"
 
 paramdf <- cbind(alltheyears, allthemeans)
@@ -732,8 +734,6 @@ colnames(alltheyears) <- "Year"
 # steady decline
 allthemeans <- as.data.frame(seq(from = 10, to = 0.083, length.out = nrow(alltheyears))) 
 
-#or exponential decline
-#allthemeans <- read.csv("expdecline.csv",   header=F, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
 
 colnames(allthemeans) <- "xi"
 
@@ -763,8 +763,6 @@ colnames(alltheyears) <- "Year"
 # steady decline
 allthemeans <- as.data.frame(seq(from = 10, to = 0.083, length.out = nrow(alltheyears))) 
 
-#or exponential decline
-#allthemeans <- read.csv("expdecline.csv",   header=F, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
 
 colnames(allthemeans) <- "xi"
 
@@ -905,7 +903,6 @@ colnames(alltheyears) <- "Year"
 year_count <- as.data.frame(table(sim_spp2_crop$Compile_Year)) %>%
 # and renaming columns
   dplyr::rename(Year = Var1, Taxa_Compiled = Freq)
-year_count
 
 #merging with all the years
 year_count <-merge(alltheyears, year_count, all = TRUE)
@@ -920,203 +917,248 @@ accumulated_D <- cbind(year_count, accumulated_D)
 #### Changepoints - Voucher Year
 
 
-```{r}
-plot(accumulated_A$Taxa_Vouchered)
-```
+<!-- ```{r} -->
+<!-- plot(accumulated_A$Taxa_Vouchered) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
+<!-- plot(a1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- selectedcp = 3 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(a1, ncpts = selectedcp) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- firstrow = 4 -->
+<!-- secondrow = firstrow +1 -->
+<!-- a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-plot(a1, diagnostic = TRUE)
-```
-look for the elbow (4-5 is good here)
+<!-- chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A)) -->
+<!-- chpoints -->
+<!-- chpoints + accumulated_A$Year[1] -->
+<!-- segmeans <- changepoint::param.est(a2)$mean -->
+<!-- segmeans -->
+<!-- segvars <- (changepoint::param.est(a2)$variance) -->
+<!-- sqrt(segvars) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8]) -->
+<!-- seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8]) -->
 
-```{r}
-selectedcp = 3
-#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
-changepoint::plot(a1, ncpts = selectedcp, type = "p")
-```
+<!-- segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean) -->
+<!-- segwmeans <- segwmeans[!is.na(segwmeans)] -->
+<!-- segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar) -->
+<!-- segwvars <- segwvars[!is.na(segwvars)] -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- startptindex = 3 -->
+<!-- endptindex = 4 -->
 
-```{r}
-changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
-```
-okay, now run it for a specific penalty level, to get the desired change point #
+<!-- print("How many species did we lose that hadn't been reported yet?") -->
+<!-- spplost <- nrow(sim_spp2) -nrow(sim_spp2_crop) -->
+<!-- spplost -->
 
-```{r}
-firstrow = 6
-secondrow = firstrow +1
-a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
+<!-- print("start seg length, mean, std: ") -->
+<!-- chpoints[startptindex] -->
+<!-- round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2) -->
+<!-- round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2) -->
 
-How many species did we lose that hadn't been reported yet?
+<!-- print("truncated seg length, mean, std:") -->
+<!-- chpoints[endptindex] - chpoints[startptindex] -->
+<!-- round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2) -->
 
-```{r}
-nrow(sim_spp2) -nrow(sim_spp2_crop)
+<!-- print("ending seg length, mean, std:") -->
+<!-- nrow(accumulated_A) - chpoints[endptindex] -->
+<!-- round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(a2, type='p') -->
+<!-- ``` -->
 
-changepoint::cpts(a2) + (accumulated_A$Year[1] -1)
+<!-- #### Changepoint - Report Date -->
 
-changepoint::param.est(a2)$mean
-sqrt(changepoint::param.est(a2)$variance)
-```
-```{r}
-startsegbefore = 1938
-endsegafter = 2011
 
-startseg <- subset(accumulated_A, Year <= startsegbefore)
-truncated <- subset(accumulated_A, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_A, Year >= endsegafter)
+<!-- ```{r} -->
+<!-- plot(accumulated_B$Taxa_Reported) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Vouchered), 2)
-round(stdev(startseg$Taxa_Vouchered), 2)
-print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Vouchered), 2)
-round(stdev(truncated$Taxa_Vouchered), 2)
-print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Vouchered), 2)
-round(stdev(endseg$Taxa_Vouchered), 2)
-```
+<!-- plot(b1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- selectedcp = 4 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(b1, ncpts = selectedcp) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(b1) + (accumulated_B$Year[1] -1) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- firstrow = 4 -->
+<!-- secondrow = firstrow +1 -->
+<!-- b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-changepoint::plot(a2, type='p')
-```
+<!-- chpoints <- c( 0, changepoint::cpts(b2), nrow(accumulated_B)) -->
+<!-- chpoints -->
+<!-- chpoints + accumulated_B$Year[1] -->
+<!-- segmeans <- changepoint::param.est(b2)$mean -->
+<!-- segmeans -->
+<!-- segvars <- (changepoint::param.est(b2)$variance) -->
+<!-- segvars -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8]) -->
+<!-- seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8]) -->
 
-#### Changepoint - Report Date
-```{r}
-plot(accumulated_B$Taxa_Reported)
-```
+<!-- segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean) -->
+<!-- segwmeans <- segwmeans[!is.na(segwmeans)] -->
+<!-- segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar) -->
+<!-- segwvars <- segwvars[!is.na(segwvars)] -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- startptindex = 5 -->
+<!-- endptindex = 6 -->
 
-```{r}
-b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
+<!-- print("How many species did we lose that hadn't been reported yet?") -->
+<!-- spplost <- nrow(sim_spp2) -nrow(sim_spp2_crop) -->
+<!-- spplost -->
 
-```{r}
-plot(b1, diagnostic = TRUE)
-```
-look for the elbow (4-5 is good here)
+<!-- print("start seg length, mean, std: ") -->
+<!-- chpoints[startptindex] -->
+<!-- round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2) -->
+<!-- round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2) -->
 
-```{r}
-selectedcp = 3
-#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
-changepoint::plot(b1, ncpts = selectedcp)
-```
+<!-- print("truncated seg length, mean, std:") -->
+<!-- chpoints[endptindex] - chpoints[startptindex] -->
+<!-- round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2) -->
 
-```{r}
-changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1)
-```
-okay, now run it for a specific penalty level, to get the desired change point #
+<!-- print("ending seg length, mean, std:") -->
+<!-- nrow(accumulated_B) - chpoints[endptindex] -->
+<!-- round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(b2, type='p') -->
+<!-- ``` -->
 
-```{r}
-firstrow = 3
-secondrow =  firstrow + 1
-b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
+<!-- #### Changepoints - Intro Date -->
 
-How many species did we lose that hadn't been reported yet?
+<!-- ```{r} -->
+<!-- plot(accumulated_C$Taxa_Introduced) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-```{r}
-changepoint::plot(b2)
-```
-```{r}
-nrow(sim_spp2) -nrow(sim_spp2_crop)
+<!-- plot(c1, diagnostic = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- selectedcp = 5 -->
+<!-- #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)") -->
+<!-- changepoint::plot(c1, ncpts = selectedcp) -->
+<!-- ``` -->
 
-changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1)
+<!-- ```{r} -->
+<!-- changepoint::cpts.full(c1) + as.numeric(accumulated_C$Year[1]) -1 -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- firstrow = 3 -->
+<!-- secondrow = firstrow +1 -->
+<!-- c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5) -->
 
-changepoint::param.est(b2)
-```
+<!-- chpoints <- c( 0, changepoint::cpts(c2), nrow(accumulated_C)) -->
+<!-- chpoints -->
+<!-- chpoints + as.numeric(accumulated_C$Year[1]) -->
+<!-- segmeans <- changepoint::param.est(c2)$mean -->
+<!-- segmeans -->
+<!-- segvars <- (changepoint::param.est(c2)$variance) -->
+<!-- sqrt(segvars) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8]) -->
+<!-- seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1]) -->
+<!-- seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2]) -->
+<!-- seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3]) -->
+<!-- seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4]) -->
+<!-- seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5]) -->
+<!-- seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6]) -->
+<!-- seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7]) -->
+<!-- seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8]) -->
 
-```{r}
-startsegbefore = 1963
-endsegafter = 2020
+<!-- segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean) -->
+<!-- segwmeans <- segwmeans[!is.na(segwmeans)] -->
+<!-- segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar) -->
+<!-- segwvars <- segwvars[!is.na(segwvars)] -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- startptindex = 2 -->
+<!-- endptindex = 3 -->
 
-startseg <- subset(accumulated_B, Year <= startsegbefore)
-truncated <- subset(accumulated_B, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_B, Year >= endsegafter)
+<!-- print("How many species did we lose that hadn't been reported yet?") -->
+<!-- spplost <- nrow(sim_spp2) -nrow(sim_spp2_crop) -->
+<!-- spplost -->
 
-print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Reported), 2)
-round(stdev(startseg$Taxa_Reported), 2)
-print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Reported), 2)
-round(stdev(truncated$Taxa_Reported), 2)
-print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Reported), 2)
-round(stdev(endseg$Taxa_Reported), 2)
-```
+<!-- print("start seg length, mean, std: ") -->
+<!-- chpoints[startptindex] -->
+<!-- round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2) -->
+<!-- round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2) -->
 
-#### Changepoints - Intro Date
-```{r}
-plot(accumulated_C$Taxa_Introduced)
-```
+<!-- print("truncated seg length, mean, std:") -->
+<!-- chpoints[endptindex] - chpoints[startptindex] -->
+<!-- round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2) -->
 
-```{r}
-c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
-
-```{r}
-plot(c1, diagnostic = TRUE)
-```
-look for the elbow (4-5 is good here)
-
-```{r}
-selectedcp = 2
-#changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
-changepoint::plot(c1, ncpts = selectedcp)
-```
-
-```{r}
-changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1)
-```
-okay, now run it for a specific penalty level, to get the desired change point #
-
-```{r}
-firstrow = 4
-secondrow = firstrow +1
-c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
-
-How many species did we lose that hadn't been reported yet?
-
-```{r}
-nrow(sim_spp2) -nrow(sim_spp2_crop)
-
-changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1)
-
-changepoint::param.est(c2)
-```
-```{r}
-startsegbefore = as.numeric(accumulated_C$Year[1]) -1
-endsegafter = 1982
-
-startseg <- subset(accumulated_C, Year <= startsegbefore)
-truncated <- subset(accumulated_C, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_C, Year >= endsegafter)
-
-print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Introduced), 2)
-round(stdev(startseg$Taxa_Introduced), 2)
-print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Introduced), 2)
-round(stdev(truncated$Taxa_Introduced), 2)
-print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Introduced), 2)
-round(stdev(endseg$Taxa_Introduced), 2)
-```
-
-```{r}
-changepoint::plot(c2, type = "p")
-```
+<!-- print("ending seg length, mean, std:") -->
+<!-- nrow(accumulated_A) - chpoints[endptindex] -->
+<!-- round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2) -->
+<!-- round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- changepoint::plot(c2, type='p') -->
+<!-- ``` -->
 
 
 ```{r}
@@ -1302,7 +1344,6 @@ colnames(ID_Report_Lag) <- "ID_Report_Lag"
 ```
 
 
-HMMM!  I'm not sure this really works like this.  Isn't it more like someone comes in, and then just compiles everything that they can at once, no matter if they were reported 1 year ago, or 30?  Yes....
 
 ##### 3.5
 Then, simulate the lag between reporting  and when someone makes a resource that is compiled and formatted
@@ -1456,215 +1497,249 @@ accumulated_D <- cbind(year_count, accumulated_D)
 
 #### Changepoints - Voucher Year
 
-
 ```{r}
 plot(accumulated_A$Taxa_Vouchered)
 ```
-
 ```{r}
 a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
 
-```{r}
 plot(a1, diagnostic = TRUE)
 ```
-look for the elbow (4-5 is good here)
-
 ```{r}
-selectedcp = 5
+selectedcp = 6
 #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
 changepoint::plot(a1, ncpts = selectedcp)
 ```
-
 ```{r}
 changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
 ```
-okay, now run it for a specific penalty level, to get the desired change point #
-
 ```{r}
-firstrow = 6
+firstrow = 2
 secondrow = firstrow +1
 a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
 
-How many species did we lose that hadn't been reported yet?
-
-```{r}
-nrow(sim_spp1) -nrow(sim_spp1_crop)
-
-changepoint::cpts(a2) + (accumulated_A$Year[1] -1)
-
-changepoint::param.est(a2)$mean
-sqrt(changepoint::param.est(a2)$variance)
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
 ```
 ```{r}
-startsegbefore = 1938
-endptindex = 2
-endsegafter = 1992
-endptindex = 3
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
 
-startseg <- subset(accumulated_A, Year <= startsegbefore)
-truncated <- subset(accumulated_A, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_A, Year >= endsegafter)
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
+```
+```{r}
+startptindex = 4
+endptindex = 6
 
-mean <- changepoint::param.est(a2)$mean
-sqrt <- sqrt(changepoint::param.est(a2)$variance)
+print("How many species did we lose that hadn't been reported yet?")
+spplost <- nrow(sim_spp3) -nrow(sim_spp3_crop)
+spplost
 
 print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Vouchered), 2)
-round(stdev(startseg$Taxa_Vouchered), 2)
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
+
 print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Vouchered), 2)
-round(stdev(truncated$Taxa_Vouchered), 2)
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
 print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Vouchered), 2)
-round(mean(sqrt[(endptindex +1):length(sqrt)]), 2)
+nrow(accumulated_A) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
 ```
-```{r}
-sqrt[(endptindex +1):length(sqrt)]
-
-```
-
 ```{r}
 changepoint::plot(a2, type='p')
 ```
 
+
+
 #### Changepoint - Report Date
+
+
 ```{r}
 plot(accumulated_B$Taxa_Reported)
 ```
-
 ```{r}
 b1 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
 
-```{r}
 plot(b1, diagnostic = TRUE)
 ```
-look for the elbow (4-5 is good here)
-
 ```{r}
-selectedcp = 3
+selectedcp = 4
 #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
 changepoint::plot(b1, ncpts = selectedcp)
 ```
-
 ```{r}
-changepoint::cpts.full(b1) + (as.numeric(accumulated_B$Year[[1]]) - 1)
+changepoint::cpts.full(b1) + (accumulated_B$Year[1] -1)
 ```
-okay, now run it for a specific penalty level, to get the desired change point #
-
 ```{r}
-firstrow = 4
-secondrow =  firstrow + 1
+firstrow = 2
+secondrow = firstrow +1
 b2 <- changepoint::cpt.meanvar(accumulated_B$Taxa_Reported, penalty = "Manual",  pen.value=((pen.value.full(b1)[firstrow] + pen.value.full(b1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+chpoints <- c( 0, changepoint::cpts(b2), nrow(accumulated_B))
+chpoints
+chpoints + accumulated_B$Year[1]
+segmeans <- changepoint::param.est(b2)$mean
+segmeans
+segvars <- (changepoint::param.est(b2)$variance)
+segvars
 ```
-
-How many species did we lose that hadn't been reported yet?
-
 ```{r}
-changepoint::plot(b2)
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
+
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
 ```
 ```{r}
-nrow(sim_spp1) -nrow(sim_spp1_crop)
+startptindex = 4
+endptindex = 6
 
-changepoint::cpts(b2) + (as.numeric(accumulated_B$Year[[1]]) - 1)
-
-changepoint::param.est(b2)
-```
-
-```{r}
-startsegbefore = 1957
-endsegafter = 2020
-
-startseg <- subset(accumulated_B, Year <= startsegbefore)
-truncated <- subset(accumulated_B, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_B, Year >= endsegafter)
+print("How many species did we lose that hadn't been reported yet?")
+spplost <- nrow(sim_spp2) -nrow(sim_spp2_crop)
+spplost
 
 print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Reported), 2)
-round(stdev(startseg$Taxa_Reported), 2)
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
+
 print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Reported), 2)
-round(stdev(truncated$Taxa_Reported), 2)
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
 print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Reported), 2)
-round(stdev(endseg$Taxa_Reported), 2)
+nrow(accumulated_B) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
+```
+```{r}
+changepoint::plot(b2, type='p')
 ```
 
 #### Changepoints - Intro Date
+
 ```{r}
 plot(accumulated_C$Taxa_Introduced)
 ```
-
 ```{r}
 c1 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
 
-```{r}
 plot(c1, diagnostic = TRUE)
 ```
-look for the elbow (4-5 is good here)
-
 ```{r}
-selectedcp = 2
+selectedcp = 5
 #changepoint::plot(a1, cpt.width = 4, col = "black", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
 changepoint::plot(c1, ncpts = selectedcp)
 ```
 
 ```{r}
-changepoint::cpts.full(c1) + (as.numeric(accumulated_C$Year[[1]]) - 1)
+changepoint::cpts.full(c1) + as.numeric(accumulated_C$Year[1]) -1
 ```
-okay, now run it for a specific penalty level, to get the desired change point #
-
 ```{r}
-firstrow = 5
+firstrow = 3
 secondrow = firstrow +1
 c2 <- changepoint::cpt.meanvar(accumulated_C$Taxa_Introduced, penalty = "Manual",  pen.value=((pen.value.full(c1)[firstrow] + pen.value.full(c1)[secondrow]) /2) , method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
-```
 
-How many species did we lose that hadn't been reported yet?
-
-```{r}
-nrow(sim_spp1) -nrow(sim_spp1_crop)
-
-changepoint::cpts(c2) + (as.numeric(accumulated_C$Year[[1]]) - 1)
-
-changepoint::param.est(c2)
+chpoints <- c( 0, changepoint::cpts(c2), nrow(accumulated_C))
+chpoints
+chpoints + as.numeric(accumulated_C$Year[1])
+segmeans <- changepoint::param.est(c2)$mean
+segmeans
+segvars <- (changepoint::param.est(c2)$variance)
+sqrt(segvars)
 ```
 ```{r}
-startsegbefore = as.numeric(accumulated_C$Year[1]) -1
-endsegafter = 1964
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
 
-startseg <- subset(accumulated_C, Year <= startsegbefore)
-truncated <- subset(accumulated_C, Year > startsegbefore & Year < endsegafter)
-endseg <- subset(accumulated_C, Year >= endsegafter)
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
+```
+```{r}
+startptindex = 2
+endptindex = 3
+
+print("How many species did we lose that hadn't been reported yet?")
+spplost <- nrow(sim_spp2) -nrow(sim_spp2_crop)
+spplost
 
 print("start seg length, mean, std: ")
-nrow(startseg)
-round(mean(startseg$Taxa_Introduced), 2)
-round(stdev(startseg$Taxa_Introduced), 2)
-print("truncated seg length, mean, std:")
-nrow(truncated)
-round(mean(truncated$Taxa_Introduced), 2)
-round(stdev(truncated$Taxa_Introduced), 2)
-print("ending seg length, mean, std:")
-nrow(endseg)
-round(mean(endseg$Taxa_Introduced), 2)
-round(stdev(endseg$Taxa_Introduced), 2)
-```
-```{r}
-accumulated_C$Year[1]
-```
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
 
+print("truncated seg length, mean, std:")
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
+print("ending seg length, mean, std:")
+nrow(accumulated_A) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
+```
 ```{r}
-changepoint::plot(c2, type = "p")
+changepoint::plot(c2, type='p')
 ```
 
 
