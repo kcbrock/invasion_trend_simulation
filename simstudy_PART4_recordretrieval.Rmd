@@ -234,7 +234,7 @@ What's the lags look like for all species
 MAJOR DIFFERENCE: you get to crop based on the ID year, because you're looking at the vouchers themselves
 How many species did we lose that hadn't been reported yet?
 ```{r}
-sim_spp10_crop <- subset(sim_spp10, Report_Year <= 2020)
+sim_spp10_crop <- subset(sim_spp10, Report_Year < 2020)
 ```
 
 ```{r}
@@ -732,7 +732,7 @@ What's the lags look like for all species
 MAJOR DIFFERENCE: you get to crop based on the ID year, because you're looking at the vouchers themselves
 How many species did we lose that hadn't been reported yet?
 ```{r}
-sim_spp11_crop <- subset(sim_spp11, Report_Year <= 2020)
+sim_spp11_crop <- subset(sim_spp11, Report_Year < 2020)
 sim_spp11_crop
 ```
 
@@ -1018,17 +1018,17 @@ accumulated_A_B_C_D
 ```
 
 ```{r}
-DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
-DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
-#plotting total species accumulation over time
-ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) +
-  geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) +
-  scale_color_viridis(discrete = TRUE) +
-  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
-  guides(colour = guide_legend(reverse=T)) +
- theme_classic() +
-  labs(title = "Scenario11 Nat Rate", x = "Year", y = "Number of Species")
-ggsave(filename = "Scenario11_ rate.png", device = "png", scale = 1, width =6, dpi = 600)
+# DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+# DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+# #plotting total species accumulation over time
+# ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(No_Taxa), group = Analysis_Type, color = Analysis_Type)) +
+#   geom_smooth( size=1.5, alpha=0.8, level = 0, method = "loess", fullrange=TRUE) +
+#   scale_color_viridis(discrete = TRUE) +
+#   scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+#   guides(colour = guide_legend(reverse=T)) +
+#  theme_classic() +
+#   labs(title = "Scenario11 Nat Rate", x = "Year", y = "Number of Species")
+# ggsave(filename = "Scenario11_ rate.png", device = "png", scale = 1, width =6, dpi = 600)
 ```
 
 ```{r}
@@ -1043,8 +1043,8 @@ ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = 
   guides(colour = guide_legend(reverse=T)) +
  theme_classic() +
   theme(legend.title=element_blank()) +
-  labs(title = "Moderate Completeness: 67% of naturalized spp. included", x = "Year", y = "Number of Species")
-ggsave(filename = "Scenario11.png", device = "png", scale = 1, width =6, dpi = 600)
+  labs(title = "67% of naturalized records retrieved", x = "Year", y = "Number of Species")
+ggsave(filename = "67natrecordretreived", device = "png", scale = 1, width =6, dpi = 600)
 ```
 
 
