@@ -1,0 +1,234 @@
+---
+title: "simstudy_PART6_HS_KBcompare"
+author: "Kelsey"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r, }
+require(knitr)
+```
+```{r}
+#get the needed packages
+if(!require("pacman")){
+	install.packages("pacman")
+	library(pacman)}
+p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np", "taxize", "data.table")
+```
+
+## Get Seebens' Data 
+
+```{r}
+HS_data <- read.csv(file = "PacificIslands-Seebens.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+HS_data
+```
+
+## & Seebens' data with Hawaii replaced with my own data
+
+```{r}
+HS_KB_data <- read.csv(file = "PacificIslands-Seebens_HawaiiKB.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+HS_KB_data
+```
+# Sync Taxonomy
+
+
+<!-- ## Making Sure the Names are in IPNI -->
+<!-- ```{r} -->
+<!-- gnr.long_HS <- HS_data$NewName %>% -->
+<!--   gnr_resolve(data_source_ids = 167, best_match_only = TRUE, with_canonical_ranks = TRUE) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- gnr.long_HS_KB <- HS_KB_data$NewName %>% -->
+<!--   gnr_resolve(data_source_ids = 167, best_match_only = TRUE, with_canonical_ranks = TRUE) -->
+<!-- ``` -->
+
+
+<!-- ## Conform to a Single Accepted Name According to Kew's Plants of the World -->
+
+<!-- ```{r} -->
+<!-- pow.output_HS <- get_pow(gnr.long_HS$matched_name2, db = "pow", accepted = TRUE, ask = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- pow.output_HS <- as.data.frame(pow.output_HS) -->
+<!-- inputID_HS <- as.data.frame(cbind(gnr.long_HS$user_supplied_name, gnr.long_HS$matched_name2, pow.output_HS$ids)) -->
+<!-- colnames(inputID_HS) <- c("user_supplied_name", "matched_name2", "IPNI_ID") -->
+<!-- head(inputID_HS) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- pow.output_HS_KB <- get_pow(gnr.long_HS_KB$matched_name2, db = "pow", accepted = TRUE, ask = TRUE) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- pow.output_HS_KB <- as.data.frame(pow.output_HS_KB) -->
+<!-- inputID_HS_KB <- as.data.frame(cbind(gnr.long_HS_KB$user_supplied_name, gnr.long_HS_KB$matched_name2, pow.output_HS_KB$ids)) -->
+<!-- colnames(inputID_HS_KB) <- c("user_supplied_name", "matched_name2", "IPNI_ID") -->
+<!-- head(inputID_HS_KB) -->
+<!-- ``` -->
+
+
+
+<!-- ## Separate the Troublemakers (just for now) -->
+
+<!-- ```{r} -->
+<!-- inputID_HS.NAsdrop <- subset(inputID_HS, (!is.na(inputID_HS$IPNI_ID))) -->
+<!-- nrow(inputID_HS.NAsdrop) -->
+
+<!-- inputID_HS_KB.NAsdrop <- subset(inputID_HS_KB, (!is.na(inputID_HS_KB$IPNI_ID))) -->
+<!-- nrow(inputID_HS_KB.NAsdrop) -->
+
+<!-- write.csv(inputID_HS.NAsdrop, "inputID_HS.NAsdrop.csv", row.names = FALSE, quote = FALSE) -->
+<!-- write.csv(inputID_HS_KB.NAsdrop, "inputID_HS_KB.NAsdrop.csv", row.names = FALSE, quote = FALSE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- inputID_HS.NAsonly <- subset(inputID_HS, (is.na(inputID_HS$IPNI_ID))) -->
+<!-- nrow(inputID_HS.NAsonly) -->
+
+<!-- inputID_HS_KB.NAsonly <- subset(inputID_HS_KB, (is.na(inputID_HS_KB$IPNI_ID))) -->
+<!-- nrow(inputID_HS_KB.NAsonly) -->
+
+<!-- write.csv(inputID_HS.NAsonly, "inputID_HS.NAsonly.csv", row.names = FALSE, quote = FALSE) -->
+<!-- write.csv(inputID_HS_KB.NAsonly, "inputID_HS_KB.NAsonly.csv", row.names = FALSE, quote = FALSE) -->
+<!-- ``` -->
+
+<!-- ## Get taxon name using IPNI IDs -->
+
+<!-- ```{r} -->
+<!-- Get_taxonname <- function(spnames) { -->
+<!--   temp <- c() -->
+<!--   temp <- pow_lookup(spnames) -->
+<!--   ifelse(is.null(temp$meta$name) == "TRUE", "ERROR", temp$meta$name) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- POW.taxonname_HS <- sapply(inputID_HS.NAsdrop$IPNI_ID[], Get_taxonname) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- POW.taxonname_HS_KB <- sapply(inputID_HS_KB.NAsdrop$IPNI_ID[], Get_taxonname) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- POWAcc_HS <- cbind(inputID_HS.NAsdrop, POW.taxonname_HS) -->
+<!-- POWAcc_HS_KB <- cbind(inputID_HS_KB.NAsdrop, POW.taxonname_HS_KB) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- write.csv(POWAcc_HS, "POWAcc_HS.csv", row.names = FALSE, quote = FALSE) -->
+<!-- write.csv(POWAcc_HS_KB, "POWAcc_HS_KB.csv", row.names = FALSE, quote = FALSE) -->
+<!-- ``` -->
+
+```{r}
+HS_AccNames <- read.csv(file = "POWAcc_HS_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+head(HS_AccNames)
+```
+```{r}
+HS_KB_AccNames <- read.csv(file = "POWAcc_HS_KB_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+head(HS_KB_AccNames)
+```
+
+```{r}
+HS_data <- merge(HS_AccNames, HS_data, by.x = "user_supplied_name", by.y = "NewName", all.y = TRUE)
+```
+```{r}
+HS_KB_data <- merge(HS_KB_AccNames, HS_KB_data, by.x = "user_supplied_name", by.y = "NewName", all.y = TRUE)
+HS_KB_data
+```
+
+## Let's compare trends for Hawaii Only
+
+### Subsetting both datasets to Hawaii Only
+
+```{r}
+HS_data_HI <- subset(HS_data, Region == "Hawaiian Islands")
+nrow(HS_data_HI)
+HS_KB_data_HI <- subset(HS_KB_data, Region == "Hawaiian Islands")
+nrow(HS_KB_data_HI)
+```
+### Make sure there are no duplicates (if there are, we should take only the first record)
+
+```{r}
+HS_data_HI <- dplyr::arrange(HS_data_HI, FirstRecord)
+nrow(HS_data_HI)
+HS_data_HI <-distinct(HS_data_HI, POW.taxonname_HS, .keep_all = TRUE)
+nrow(HS_data_HI)
+```
+```{r}
+HS_KB_data_HI <- dplyr::arrange(HS_KB_data_HI, FirstRecord)
+nrow(HS_KB_data_HI)
+HS_KB_data_HI <-distinct(HS_KB_data_HI, POW.taxonname_HS_KB, .keep_all = TRUE)
+nrow(HS_KB_data_HI)
+```
+
+## And, let's make trendlines
+
+
+
+### For the Seeben's data
+
+```{r}
+HS_data_HI
+```
+```{r}
+str(HS_data_HI)
+```
+
+
+### Accumulating
+```{r}
+alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(HS_data_HI$FirstRecord)) %>%
+  dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Naturalized, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+tail(accumulated_A,10)
+```
+```{r}
+
+```
+
+
+```{r}
+plot(accumulated_A$Taxa_Naturalized)
+```
+
+```{r}
+DATA <- accumulated_A
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, Year >= 1800)
+DATA <- subset(DATA, Year <= 2010)
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_A))) +
+  geom_line( color = "black", size=2, alpha=1) +
+ # scale_color_viridis(discrete = TRUE) +
+#  scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank()) +
+  labs( title = "HS", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "HS", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+### Changepoint Analysis
+
+```{r}
+a2 <- changepoint::cpt.meanvar(DATA$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+changepoint::plot(a2, type = "p", ylim = c(0,30))
+```
+```{r}
+changepoint::param.est(a2)
+```
