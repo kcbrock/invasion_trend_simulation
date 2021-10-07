@@ -13,7 +13,7 @@ require(knitr)
 if(!require("pacman")){
 	install.packages("pacman")
 	library(pacman)}
-p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np", "taxize", "data.table")
+p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np", "taxize", "data.table", "tibble", "ggridges")
 ```
 
 ## Get Seebens' Data 
@@ -160,6 +160,37 @@ nrow(HS_KB_data_HI)
 HS_KB_data_HI <-distinct(HS_KB_data_HI, POW.taxonname_HS_KB, .keep_all = TRUE)
 nrow(HS_KB_data_HI)
 ```
+### Adding Cultivation and Intro/Nat Date
+
+```{r}
+DATE_CULT <- read.csv(file = "HAPI_data_introdate_cultivation.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+DATE_CULT
+```
+
+```{r}
+tempHS <- merge(HS_data_HI, DATE_CULT, by.x = "POW.taxonname_HS", by.y = "scientificName", all.x = TRUE, all.y = FALSE)
+write.csv(tempHS, "tempHS.csv", row.names = FALSE, quote = FALSE)
+tempHS
+```
+
+```{r}
+HS_data_HI <- read.csv(file = "HS_data_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+HS_data_HI
+```
+
+
+```{r}
+tempHS_KB <- merge(HS_KB_data_HI, DATE_CULT, by.x = "POW.taxonname_HS_KB", by.y = "scientificName", all.x = TRUE, all.y = FALSE)
+write.csv(tempHS_KB, "tempHS_KB.csv", row.names = FALSE, quote = FALSE)
+tempHS_KB
+```
+
+
+```{r}
+HS_KB_data_HI <- read.csv(file = "HS_KB_data_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+HS_KB_data_HI
+```
+
 
 ## And, let's make trendlines
 
@@ -170,12 +201,9 @@ nrow(HS_KB_data_HI)
 ```{r}
 HS_data_HI
 ```
-```{r}
-str(HS_data_HI)
-```
 
 
-### Accumulating
+### Accumulating the Species
 ```{r}
 alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
 colnames(alltheyears) <- "Year"
@@ -194,19 +222,354 @@ accumulated_A <- accumulate(year_count$Taxa_Naturalized, sum)
 accumulated_A <- cbind(year_count, accumulated_A)
 tail(accumulated_A,10)
 ```
-```{r}
 
+
+```{r}
+alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(HS_data_HI$NatYear2)) %>%
+  dplyr::rename(Year = Var1, Taxa_Naturalized_B = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_B <- accumulate(year_count$Taxa_Naturalized_B, sum)
+accumulated_B <- cbind(year_count, accumulated_B)
+tail(accumulated_B,10)
+```
+
+
+### Merge 
+
+```{r}
+colnames(accumulated_A) <- c("Year", "Taxa_Naturalized", "accumulated")
+colnames(accumulated_B) <- c("Year", "Taxa_Naturalized", "accumulated")
+accumulated_A$usedate <- "Very First Record"
+accumulated_B$usedate <- "First Naturalized Record"
+accumulated_A <- rbind(accumulated_A, accumulated_B)
+accumulated_A
+```
+
+```{r}
+startdate = 1800
+enddate = 2005
+
+DATA <- accumulated_A
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, Year >= startdate)
+DATA <- subset(DATA, Year <= enddate)
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate, color = usedate)) +
+  geom_line(  size=2, alpha=1) +
+  scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank()) +
+  labs( title = "", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "HS.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+```{r}
+DATA
+```
+
+
+
+### Changepoint Analysis
+
+```{r}
+DATAfirstever <- subset(DATA, usedate == "Very First Record")
+a2 <- changepoint::cpt.meanvar(DATAfirstever$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
+```
+
+```{r}
+changepoint::plot(a2, type = "p", ylim = c(0,30))
+```
+
+```{r}
+c((0 + + DATAfirstever$Year[1]), (changepoint::cpts(a2) + DATAfirstever$Year[1]), DATAfirstever$Year[nrow(DATAfirstever)])
+```
+
+```{r}
+changepoint::param.est(a2)
+```
+
+```{r}
+DATAnatdate <- subset(DATA, usedate != "Very First Record")
+a2 <- changepoint::cpt.meanvar(DATAnatdate$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
+```
+
+```{r}
+changepoint::plot(a2, type = "p", ylim = c(0,30))
+```
+
+```{r}
+c((0 +  DATAnatdate$Year[1]), (changepoint::cpts(a2) + DATAnatdate$Year[1]), DATAnatdate$Year[nrow(DATAnatdate)])
+```
+
+```{r}
+changepoint::param.est(a2)
+```
+
+### Ridgeline plots to visualize harvest point data
+
+
+```{r}
+DATA2 <- HS_data_HI
+DATA2 <- subset(DATA2, FirstRecord >= startdate)
+DATA2 <- subset(DATA2, FirstRecord <= enddate)
+```
+
+```{r}
+  ggplot(DATA2, aes(x = FirstRecord, fill = Harvest.Point)) +
+  geom_density(aes(y = ..count..),  stat="binline", bins=50, alpha = 0.65)+
+#  scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_classic()
+
+```
+
+### For My Data set
+
+```{r}
+HS_KB_data_HI
+```
+```{r}
+str(HS_KB_data_HI)
+```
+
+
+
+### Accumulating the Species
+```{r}
+alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(HS_KB_data_HI$FirstEverRecord_statewide_ADD)) %>%
+  dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Naturalized, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+tail(accumulated_A,10)
 ```
 
 
 ```{r}
-plot(accumulated_A$Taxa_Naturalized)
+alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(HS_KB_data_HI$yearFirstRecord_statewide_ADD)) %>%
+  dplyr::rename(Year = Var1, Taxa_Naturalized_B = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_B <- accumulate(year_count$Taxa_Naturalized_B, sum)
+accumulated_B <- cbind(year_count, accumulated_B)
+tail(accumulated_B,10)
 ```
+
+
+### Merge 
+
+```{r}
+colnames(accumulated_A) <- c("Year", "Taxa_Naturalized", "accumulated")
+colnames(accumulated_B) <- c("Year", "Taxa_Naturalized", "accumulated")
+accumulated_A$usedate <- "Very First Record"
+accumulated_B$usedate <- "First Naturalized Record"
+accumulated_A <- rbind(accumulated_A, accumulated_B)
+accumulated_A
+```
+
+```{r}
+startdate = 1800
+enddate = 2005
+
+DATA <- accumulated_A
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, Year >= startdate)
+DATA <- subset(DATA, Year <= enddate)
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate, color = usedate)) +
+  geom_line(  size=2, alpha=1) +
+  scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank()) +
+  labs( title = "", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "KB.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+
+
+
+
+### Changepoint Analysis
+
+```{r}
+a2 <- changepoint::cpt.meanvar(DATA$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
+```
+
+```{r}
+changepoint::plot(a2, type = "p", ylim = c(0,30))
+```
+
+```{r}
+c((0 + + DATA$Year[1]), (changepoint::cpts(a2) + DATA$Year[1]), DATA$Year[nrow(DATA)])
+```
+
+```{r}
+changepoint::param.est(a2)
+```
+
+
+### Ridgeline plots to visualize harvest point data
+
+
+```{r}
+DATA2 <- HS_KB_data_HI
+DATA2 <- subset(DATA2, FirstRecord >= startdate)
+DATA2 <- subset(DATA2, FirstRecord <= enddate)
+```
+
+```{r}
+  ggplot(DATA2, aes(x = FirstRecord, fill = Harvest.Point)) +
+  geom_density(aes(y = ..count..),  stat="binline", bins=50, alpha = 0.65)+
+  #scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_classic()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Let's compare trends for THE WHOLE PACIFIC ISLANDS
+
+### Subsetting both datasets to Hawaii Only
+
+```{r}
+HS_data_PAC <- HS_data
+nrow(HS_data_PAC)
+HS_KB_data_PAC <- HS_KB_data
+nrow(HS_KB_data_PAC)
+```
+### Make sure there are no duplicates (if there are, we should take only the first record)
+
+```{r}
+HS_data_PAC <- dplyr::arrange(HS_data_PAC, FirstRecord)
+nrow(HS_data_PAC)
+HS_data_PAC <-distinct(HS_data_PAC, POW.taxonname_HS, .keep_all = TRUE)
+nrow(HS_data_PAC)
+```
+```{r}
+HS_KB_data_PAC <- dplyr::arrange(HS_KB_data_PAC, FirstRecord)
+nrow(HS_KB_data_PAC)
+HS_KB_data_PAC <-distinct(HS_KB_data_PAC, POW.taxonname_HS_KB, .keep_all = TRUE)
+nrow(HS_KB_data_PAC)
+```
+
+## And, let's make trendlines
+
+
+
+### For the Seeben's data
+
+```{r}
+HS_data_PAC
+```
+```{r}
+str(HS_data_PAC)
+```
+
+
+### Accumulating
+```{r}
+alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(HS_data_PAC$FirstRecord)) %>%
+  dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Naturalized, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+tail(accumulated_A,10)
+```
+
 
 ```{r}
 DATA <- accumulated_A
 #DATA$Year <- as.numeric(levels(DATA$Year))
-DATA <- subset(DATA, Year >= 1800)
+DATA <- subset(DATA, Year >= 1810)
 DATA <- subset(DATA, Year <= 2010)
 #plotting total species accumulation over time
 ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_A))) +
@@ -216,8 +579,80 @@ ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_A))) +
   guides(colour = guide_legend(reverse=T)) +
  theme_classic() +
   theme(legend.title=element_blank()) +
-  labs( title = "HS", x = "Year", y = "Total Naturalized Species")
-ggsave(filename = "HS", device = "png", scale = 1, width =6, dpi = 600)
+  labs( title = "HS Pacific", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "HS_PAC.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+
+
+
+
+
+### Changepoint Analysis
+
+```{r}
+a2 <- changepoint::cpt.meanvar(DATA$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
+```
+
+```{r}
+changepoint::plot(a2, type = "p", ylim = c(0,30))
+```
+
+```{r}
+c((0 + + DATA$Year[1]), (changepoint::cpts(a2) + DATA$Year[1]), DATA$Year[nrow(DATA)])
+```
+
+```{r}
+changepoint::param.est(a2)
+```
+
+
+### For My Data set
+
+```{r}
+HS_KB_data_PAC
+```
+```{r}
+str(HS_KB_data_PAC)
+```
+
+
+### Accumulating
+```{r}
+alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(HS_KB_data_PAC$FirstRecord)) %>%
+  dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Naturalized, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+tail(accumulated_A,10)
+```
+
+
+```{r}
+DATA <- accumulated_A
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, Year >= 1810)
+DATA <- subset(DATA, Year <= 2010)
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_A))) +
+  geom_line( color = "black", size=2, alpha=1) +
+ # scale_color_viridis(discrete = TRUE) +
+#  scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank()) +
+  labs( title = "KB Pacific", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "KB_PAC.png", device = "png", scale = 1, width =6, dpi = 600)
 ```
 
 ### Changepoint Analysis
@@ -229,6 +664,9 @@ a2 <- changepoint::cpt.meanvar(DATA$Taxa_Naturalized, penalty = "MBIC", method =
 ```{r}
 changepoint::plot(a2, type = "p", ylim = c(0,30))
 ```
+
 ```{r}
+c((0 + + DATA$Year[1]), (changepoint::cpts(a2) + DATA$Year[1]), DATA$Year[nrow(DATA)])
+
 changepoint::param.est(a2)
 ```
