@@ -119,77 +119,109 @@ HS_KB_data
 <!-- write.csv(POWAcc_HS_KB, "POWAcc_HS_KB.csv", row.names = FALSE, quote = FALSE) -->
 <!-- ``` -->
 
-```{r}
-HS_AccNames <- read.csv(file = "POWAcc_HS_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
-head(HS_AccNames)
-```
-```{r}
-HS_KB_AccNames <- read.csv(file = "POWAcc_HS_KB_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
-head(HS_KB_AccNames)
-```
+<!-- ```{r} -->
+<!-- HS_AccNames <- read.csv(file = "POWAcc_HS_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F) -->
+<!-- head(HS_AccNames) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- HS_KB_AccNames <- read.csv(file = "POWAcc_HS_KB_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F) -->
+<!-- head(HS_KB_AccNames) -->
+<!-- ``` -->
 
-```{r}
-HS_data <- merge(HS_AccNames, HS_data, by.x = "user_supplied_name", by.y = "NewName", all.y = TRUE)
-```
-```{r}
-HS_KB_data <- merge(HS_KB_AccNames, HS_KB_data, by.x = "user_supplied_name", by.y = "NewName", all.y = TRUE)
-HS_KB_data
-```
-
-## Let's compare trends for Hawaii Only
-
-### Subsetting both datasets to Hawaii Only
-
-```{r}
-HS_data_HI <- subset(HS_data, Region == "Hawaiian Islands")
-nrow(HS_data_HI)
-HS_KB_data_HI <- subset(HS_KB_data, Region == "Hawaiian Islands")
-nrow(HS_KB_data_HI)
-```
-### Make sure there are no duplicates (if there are, we should take only the first record)
-
-```{r}
-HS_data_HI <- dplyr::arrange(HS_data_HI, FirstRecord)
-nrow(HS_data_HI)
-HS_data_HI <-distinct(HS_data_HI, POW.taxonname_HS, .keep_all = TRUE)
-nrow(HS_data_HI)
-```
-```{r}
-HS_KB_data_HI <- dplyr::arrange(HS_KB_data_HI, FirstRecord)
-nrow(HS_KB_data_HI)
-HS_KB_data_HI <-distinct(HS_KB_data_HI, POW.taxonname_HS_KB, .keep_all = TRUE)
-nrow(HS_KB_data_HI)
-```
-### Adding Cultivation and Intro/Nat Date
-
-```{r}
-DATE_CULT <- read.csv(file = "HAPI_data_introdate_cultivation.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
-DATE_CULT
-```
-
-```{r}
-tempHS <- merge(HS_data_HI, DATE_CULT, by.x = "POW.taxonname_HS", by.y = "scientificName", all.x = TRUE, all.y = FALSE)
-write.csv(tempHS, "tempHS.csv", row.names = FALSE, quote = FALSE)
-tempHS
-```
-
-```{r}
-HS_data_HI <- read.csv(file = "HS_data_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
-HS_data_HI
-```
+<!-- ```{r} -->
+<!-- HS_data <- merge(HS_AccNames, HS_data, by.x = "user_supplied_name", by.y = "NewName", all.y = TRUE) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- HS_KB_data <- merge(HS_KB_AccNames, HS_KB_data, by.x = "user_supplied_name", by.y = "NewName", all.y = TRUE) -->
+<!-- HS_KB_data -->
+<!-- ``` -->
 
 
-```{r}
-tempHS_KB <- merge(HS_KB_data_HI, DATE_CULT, by.x = "POW.taxonname_HS_KB", by.y = "scientificName", all.x = TRUE, all.y = FALSE)
-write.csv(tempHS_KB, "tempHS_KB.csv", row.names = FALSE, quote = FALSE)
-tempHS_KB
-```
+
+<!-- ## Let's compare trends for Hawaii Only -->
+
+<!-- ### Subsetting both datasets to Hawaii Only -->
+
+<!-- ```{r} -->
+<!-- HS_data_HI <- subset(HS_data, Region == "Hawaiian Islands") -->
+<!-- nrow(HS_data_HI) -->
+<!-- HS_KB_data_HI <- subset(HS_KB_data, Region == "Hawaiian Islands") -->
+<!-- nrow(HS_KB_data_HI) -->
+<!-- ``` -->
+<!-- ### Make sure there are no duplicates (if there are, we should take only the first record) -->
+
+<!-- ```{r} -->
+<!-- HS_data_HI <- dplyr::arrange(HS_data_HI, FirstRecord) -->
+<!-- nrow(HS_data_HI) -->
+<!-- HS_data_HI <-distinct(HS_data_HI, POW.taxonname_HS, .keep_all = TRUE) -->
+<!-- nrow(HS_data_HI) -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- HS_KB_data_HI <- dplyr::arrange(HS_KB_data_HI, FirstRecord) -->
+<!-- nrow(HS_KB_data_HI) -->
+<!-- HS_KB_data_HI <-distinct(HS_KB_data_HI, POW.taxonname_HS_KB, .keep_all = TRUE) -->
+<!-- nrow(HS_KB_data_HI) -->
+<!-- ``` -->
+<!-- ### Adding Cultivation and Intro/Nat Date -->
+
+<!-- ```{r} -->
+<!-- DATE_CULT <- read.csv(file = "HAPI_data_introdate_cultivation.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F) -->
+<!-- DATE_CULT -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- tempHS <- merge(HS_data_HI, DATE_CULT, by.x = "POW.taxonname_HS", by.y = "scientificName", all.x = TRUE, all.y = FALSE) -->
+<!-- write.csv(tempHS, "tempHS.csv", row.names = FALSE, quote = FALSE) -->
+<!-- tempHS -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- HS_data_HI <- read.csv(file = "HS_data_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F) -->
+<!-- HS_data_HI -->
+<!-- ``` -->
 
 
+<!-- ```{r} -->
+<!-- tempHS_KB <- merge(HS_KB_data_HI, DATE_CULT, by.x = "POW.taxonname_HS_KB", by.y = "scientificName", all.x = TRUE, all.y = FALSE) -->
+<!-- write.csv(tempHS_KB, "tempHS_KB.csv", row.names = FALSE, quote = FALSE) -->
+<!-- tempHS_KB -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- HS_KB_data_HI <- read.csv(file = "HS_KB_data_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F) -->
+<!-- HS_KB_data_HI -->
+<!-- ``` -->
+
+
+
+<!-- ### Now, let's combine the dataframes -->
+
+<!-- ```{r} -->
+<!-- HS_data_HI <- HS_data_HI %>% dplyr::rename(POW.taxonname = POW.taxonname) %>% add_column(Compilation = "Seebens") -->
+<!-- HS_KB_data_HI <- HS_KB_data_HI %>% dplyr::rename(POW.taxonname = POW.taxonname)  %>% add_column(Compilation = "Seebens and Brock") -->
+
+<!-- HS_data_HI <- HS_data_HI %>% dplyr::select(POW.taxonname, IPNI_ID, user_supplied_name, Region, Region2, PresentStatus, FirstRecord, FINAL_firsteverdate,	FINAL_firstnatdate, -->
+<!--  Source,  DataQuality, Harvest.Point, introductionPathway,	introductionPathway.2, Compilation) -->
+<!-- HS_KB_data_HI <- HS_KB_data_HI %>% dplyr::select(POW.taxonname, IPNI_ID, user_supplied_name, Region, Region2, PresentStatus, FirstRecord, FINAL_firsteverdate,	FINAL_firstnatdate, -->
+<!--  Source,  DataQuality, Harvest.Point, introductionPathway, introductionPathway.2, Compilation) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- COMBINED <- rbind(HS_data_HI, HS_KB_data_HI) -->
+<!-- COMBINED -->
+<!-- ``` -->
+<!-- ```{r} -->
+<!-- write.csv(COMBINED, "COMBINED.csv", row.names = FALSE, quote = FALSE) -->
+<!-- ``` -->
+
 ```{r}
-HS_KB_data_HI <- read.csv(file = "HS_KB_data_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
-HS_KB_data_HI
+COMBINED <- read.csv(file = "COMBINED_fixed.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+COMBINED
 ```
+
 
 
 ## And, let's make trendlines
@@ -199,7 +231,7 @@ HS_KB_data_HI
 ### For the Seeben's data
 
 ```{r}
-HS_data_HI
+HS_data_HI <- subset(COMBINED, Compilation_old == "Seebens")
 ```
 
 
@@ -209,7 +241,7 @@ alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they we vouchered
-year_count <- as.data.frame(table(HS_data_HI$FirstRecord)) %>%
+year_count <- as.data.frame(table(HS_data_HI$FINAL_firsteverdate)) %>%
   dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
 
 #merging with all the years
@@ -229,7 +261,7 @@ alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they we vouchered
-year_count <- as.data.frame(table(HS_data_HI$NatYear2)) %>%
+year_count <- as.data.frame(table(HS_data_HI$FINAL_firstnatdate)) %>%
   dplyr::rename(Year = Var1, Taxa_Naturalized_B = Freq)
 
 #merging with all the years
@@ -249,14 +281,14 @@ tail(accumulated_B,10)
 ```{r}
 colnames(accumulated_A) <- c("Year", "Taxa_Naturalized", "accumulated")
 colnames(accumulated_B) <- c("Year", "Taxa_Naturalized", "accumulated")
-accumulated_A$usedate <- "Very First Record"
-accumulated_B$usedate <- "First Naturalized Record"
+accumulated_A$usedate <- "Data from Seebens et al."
+accumulated_B$usedate <- "Adjusted Data from Seebens et al."
 accumulated_A <- rbind(accumulated_A, accumulated_B)
 accumulated_A
 ```
 
 ```{r}
-startdate = 1800
+startdate = 1905
 enddate = 2005
 
 DATA <- accumulated_A
@@ -267,7 +299,7 @@ DATA <- subset(DATA, Year <= enddate)
 ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate, color = usedate)) +
   geom_line(  size=2, alpha=1) +
   scale_color_viridis(discrete = TRUE) +
-  scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
   guides(colour = guide_legend(reverse=T)) +
  theme_classic() +
   theme(legend.title=element_blank()) +
@@ -275,47 +307,42 @@ ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate,
 ggsave(filename = "HS.png", device = "png", scale = 1, width =6, dpi = 600)
 ```
 
-```{r}
-DATA
-```
-
-
 
 ### Changepoint Analysis
 
-```{r}
-DATAfirstever <- subset(DATA, usedate == "Very First Record")
-a2 <- changepoint::cpt.meanvar(DATAfirstever$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
-```
+<!-- ```{r} -->
+<!-- DATAfirstever <- subset(DATA, usedate == "Very First Record") -->
+<!-- a2 <- changepoint::cpt.meanvar(DATAfirstever$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10) -->
+<!-- ``` -->
 
-```{r}
-changepoint::plot(a2, type = "p", ylim = c(0,30))
-```
+<!-- ```{r} -->
+<!-- changepoint::plot(a2, type = "p", ylim = c(0,30)) -->
+<!-- ``` -->
 
-```{r}
-c((0 + + DATAfirstever$Year[1]), (changepoint::cpts(a2) + DATAfirstever$Year[1]), DATAfirstever$Year[nrow(DATAfirstever)])
-```
+<!-- ```{r} -->
+<!-- c((0 + + DATAfirstever$Year[1]), (changepoint::cpts(a2) + DATAfirstever$Year[1]), DATAfirstever$Year[nrow(DATAfirstever)]) -->
+<!-- ``` -->
 
-```{r}
-changepoint::param.est(a2)
-```
+<!-- ```{r} -->
+<!-- changepoint::param.est(a2) -->
+<!-- ``` -->
 
-```{r}
-DATAnatdate <- subset(DATA, usedate != "Very First Record")
-a2 <- changepoint::cpt.meanvar(DATAnatdate$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
-```
+<!-- ```{r} -->
+<!-- DATAnatdate <- subset(DATA, usedate != "Very First Record") -->
+<!-- a2 <- changepoint::cpt.meanvar(DATAnatdate$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10) -->
+<!-- ``` -->
 
-```{r}
-changepoint::plot(a2, type = "p", ylim = c(0,30))
-```
+<!-- ```{r} -->
+<!-- changepoint::plot(a2, type = "p", ylim = c(0,30)) -->
+<!-- ``` -->
 
-```{r}
-c((0 +  DATAnatdate$Year[1]), (changepoint::cpts(a2) + DATAnatdate$Year[1]), DATAnatdate$Year[nrow(DATAnatdate)])
-```
+<!-- ```{r} -->
+<!-- c((0 +  DATAnatdate$Year[1]), (changepoint::cpts(a2) + DATAnatdate$Year[1]), DATAnatdate$Year[nrow(DATAnatdate)]) -->
+<!-- ``` -->
 
-```{r}
-changepoint::param.est(a2)
-```
+<!-- ```{r} -->
+<!-- changepoint::param.est(a2) -->
+<!-- ``` -->
 
 ### Ridgeline plots to visualize harvest point data
 
@@ -338,11 +365,10 @@ DATA2 <- subset(DATA2, FirstRecord <= enddate)
 ### For My Data set
 
 ```{r}
+HS_KB_data_HI <- subset(COMBINED, Compilation_old == "Seebens and Brock")
 HS_KB_data_HI
 ```
-```{r}
-str(HS_KB_data_HI)
-```
+
 
 
 
@@ -352,7 +378,7 @@ alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they we vouchered
-year_count <- as.data.frame(table(HS_KB_data_HI$FirstEverRecord_statewide_ADD)) %>%
+year_count <- as.data.frame(table(HS_KB_data_HI$FINAL_firsteverdate)) %>%
   dplyr::rename(Year = Var1, Taxa_Naturalized = Freq)
 
 #merging with all the years
@@ -361,9 +387,9 @@ year_count <-merge(alltheyears, year_count, all = TRUE)
 year_count[is.na(year_count)] = 0
 
 #calculating species accumulation over time
-accumulated_A <- accumulate(year_count$Taxa_Naturalized, sum)
-accumulated_A <- cbind(year_count, accumulated_A)
-tail(accumulated_A,10)
+accumulated_C <- accumulate(year_count$Taxa_Naturalized, sum)
+accumulated_C <- cbind(year_count, accumulated_C)
+tail(accumulated_C,10)
 ```
 
 
@@ -372,8 +398,8 @@ alltheyears <- as.data.frame(seq(from = 1000, to = 2020))
 colnames(alltheyears) <- "Year"
 
 #grouping my simulated species by the year they we vouchered
-year_count <- as.data.frame(table(HS_KB_data_HI$yearFirstRecord_statewide_ADD)) %>%
-  dplyr::rename(Year = Var1, Taxa_Naturalized_B = Freq)
+year_count <- as.data.frame(table(HS_KB_data_HI$FINAL_firstnatdate)) %>%
+  dplyr::rename(Year = Var1, accumulated_D = Freq)
 
 #merging with all the years
 year_count <-merge(alltheyears, year_count, all = TRUE)
@@ -381,28 +407,28 @@ year_count <-merge(alltheyears, year_count, all = TRUE)
 year_count[is.na(year_count)] = 0
 
 #calculating species accumulation over time
-accumulated_B <- accumulate(year_count$Taxa_Naturalized_B, sum)
-accumulated_B <- cbind(year_count, accumulated_B)
-tail(accumulated_B,10)
+accumulated_D <- accumulate(year_count$accumulated_D, sum)
+accumulated_D <- cbind(year_count, accumulated_D)
+tail(accumulated_D,10)
 ```
 
 
 ### Merge 
 
 ```{r}
-colnames(accumulated_A) <- c("Year", "Taxa_Naturalized", "accumulated")
-colnames(accumulated_B) <- c("Year", "Taxa_Naturalized", "accumulated")
-accumulated_A$usedate <- "Very First Record"
-accumulated_B$usedate <- "First Naturalized Record"
-accumulated_A <- rbind(accumulated_A, accumulated_B)
-accumulated_A
+colnames(accumulated_C) <- c("Year", "Taxa_Naturalized", "accumulated")
+colnames(accumulated_D) <- c("Year", "Taxa_Naturalized", "accumulated")
+accumulated_C$usedate <- "Very First Record - KB"
+accumulated_D$usedate <- "Data from This Publication"
+accumulated_C <- rbind(accumulated_C, accumulated_D)
+accumulated_C
 ```
 
 ```{r}
-startdate = 1800
-enddate = 2005
+#startdate = 1920
+#enddate = 2020
 
-DATA <- accumulated_A
+DATA <- accumulated_C
 #DATA$Year <- as.numeric(levels(DATA$Year))
 DATA <- subset(DATA, Year >= startdate)
 DATA <- subset(DATA, Year <= enddate)
@@ -419,76 +445,127 @@ ggsave(filename = "KB.png", device = "png", scale = 1, width =6, dpi = 600)
 ```
 
 
+Both analyses on one figure
+
+```{r}
+startdate = 1905
+enddate = 2005
+
+DATA <- rbind(accumulated_A, accumulated_C)
+DATA <- subset(DATA, usedate != "Very First Record - KB")
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, Year >= startdate)
+DATA <- subset(DATA, Year <= enddate)
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate, color = usedate)) +
+  geom_line(  size=2, alpha=1) +
+  scale_color_viridis(discrete = TRUE) +
+#  scale_x_continuous(breaks = c(1900, 1920, 1940,  1960, 1980, 2000, 2020)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_light() +
+  theme(panel.border = element_blank(),legend.title=element_blank()) +
+  labs( title = "", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "both.png", device = "png", scale = 1, width =6, dpi = 600)
+
+
+```
+
+
+
 
 
 
 ### Changepoint Analysis
 
+<!-- ```{r} -->
+<!-- a2 <- changepoint::cpt.meanvar(DATA$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::plot(a2, type = "p", ylim = c(0,30)) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- c((0 + + DATA$Year[1]), (changepoint::cpts(a2) + DATA$Year[1]), DATA$Year[nrow(DATA)]) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- changepoint::param.est(a2) -->
+<!-- ``` -->
+
+
+<!-- ### Ridgeline plots to visualize harvest point data -->
+
+
+<!-- ```{r} -->
+<!-- DATA2 <- HS_KB_data_HI -->
+<!-- DATA2 <- subset(DATA2, FirstRecord >= startdate) -->
+<!-- DATA2 <- subset(DATA2, FirstRecord <= enddate) -->
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!--   ggplot(DATA2, aes(x = FirstRecord, fill = Harvest.Point)) + -->
+<!--   geom_density(aes(y = ..count..),  stat="binline", bins=50, alpha = 0.65)+ -->
+<!--   #scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) + -->
+<!--   scale_fill_viridis(discrete = TRUE) + -->
+<!--   theme_classic() -->
+
+<!-- ``` -->
+
 ```{r}
-a2 <- changepoint::cpt.meanvar(DATA$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 10)
+COMBINED
 ```
 
 ```{r}
-changepoint::plot(a2, type = "p", ylim = c(0,30))
-```
+startdate = 1905
+enddate = 2005
 
+DATA <- COMBINED
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, FINAL_firstnatdate >= startdate)
+DATA <- subset(DATA, FINAL_firstnatdate <= enddate)
+
+#DATA <- subset(Per_isl_nat_KtoH_natonly, yearFirst_EVER_Record_statewide >= 1900)
+
+breaks <- c(1905, 1910,  1915, 1920, 1925, 1930, 1935, 1940, 1945, 1950,  1955, 1960,  1965, 1970,  1975, 1980, 1985, 1990, 1995, 2000, 2005)
+labels = c( "1910",  "1915", "1920", "1925", "1930", "1935", "1940", "1945", "1950",  "1955", "1960",  "1965", "1970",  "1975", "1980", "1985", "1990", "1995", "2000", "2005")
+
+DATA$time_binned <- cut(as.numeric(DATA$FINAL_firstnatdate), 
+                  breaks=breaks, 
+                  include.lowest=TRUE, 
+                  right=TRUE, labels = labels)
+
+DATA
+```
 ```{r}
-c((0 + + DATA$Year[1]), (changepoint::cpts(a2) + DATA$Year[1]), DATA$Year[nrow(DATA)])
+DATA <- DATA %>% distinct(POW.taxonname, time_binned, .keep_all = TRUE)
+DATA
 ```
-
 ```{r}
-changepoint::param.est(a2)
+DATA_All <- DATA %>%
+  group_by(time_binned, Compilation) %>%
+ dplyr::summarize(count = n())
+DATA_All
+
 ```
 
 
-### Ridgeline plots to visualize harvest point data
-
-
+ 
+ 
 ```{r}
-DATA2 <- HS_KB_data_HI
-DATA2 <- subset(DATA2, FirstRecord >= startdate)
-DATA2 <- subset(DATA2, FirstRecord <= enddate)
+ DATA_All %>%
+#  mutate(Compilation = fct_reorder(Compilation, time_binned)) %>%
+ggplot( aes(fill=as.factor(Compilation), y=count, x=time_binned))+ 
+    geom_bar(position="fill", stat="identity", size = 0.25,  color = "slategrey") +
+    scale_fill_viridis(discrete = T, option = "G") +
+  #scale_fill_grey() +
+    theme_classic() +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  labs(x = "Time (5-year bins)", y = "Proportion of Known Records")
+
+
+ggsave(filename = "temporal_samplingbias.png", device = "png", scale = 1, width =6, height = 3, dpi = 600)
 ```
-
-```{r}
-  ggplot(DATA2, aes(x = FirstRecord, fill = Harvest.Point)) +
-  geom_density(aes(y = ..count..),  stat="binline", bins=50, alpha = 0.65)+
-  #scale_x_continuous(breaks = c(1800, 1850, 1900, 1950, 2000)) +
-  scale_fill_viridis(discrete = TRUE) +
-  theme_classic()
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
