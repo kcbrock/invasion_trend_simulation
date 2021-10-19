@@ -113,24 +113,24 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 ##### 3.2
 Second, simulate the lag between detection and evidence collection
 let's say this takes around 1 years, with some taking longer, up to 5 years
-```{r}
-mean = 10
-SD = 3.5
-skew = 0
-params <- sn::cp2dp(c(mean, SD, skew), "SN")
-
-Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
-Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-#plotting histogram
-# ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
-#   geom_histogram(binwidth = 1) +
-#   theme_light()
-# summary(Detect_Vouch_Lag)
-
-```
+# ```{r}
+# mean = 10
+# SD = 3.5
+# skew = 0
+# params <- sn::cp2dp(c(mean, SD, skew), "SN")
+# 
+# Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
+# Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# #plotting histogram
+# # ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
+# #   geom_histogram(binwidth = 1) +
+# #   theme_light()
+# # summary(Detect_Vouch_Lag)
+# 
+# ```
 
 ##### 3.3
 
@@ -207,12 +207,12 @@ All created by adding or subtracting from the naturalization year
 ```{r}
 sim_spp5$Intro_Year <- sim_spp5$Naturalization_Year - Intro_Nat_Lag$Intro_Nat_Lag
 sim_spp5$Detect_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag
-sim_spp5$Voucher_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag
-sim_spp5$ID_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag
-sim_spp5$Report_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
+sim_spp5$Voucher_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag 
+sim_spp5$ID_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag
+sim_spp5$Report_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
 
 
-sim_spp5$Compile_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
+sim_spp5$Compile_Year <- sim_spp5$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
 
 
 sim_spp5$All_Processing_Lags <- Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
@@ -514,10 +514,10 @@ accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumula
 accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
 accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
 accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
-accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
-accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated$Analysis_Type <- "True Naturalization Date"
+accumulated_A$Analysis_Type <- "Detection Date"
 accumulated_B$Analysis_Type <- "Report Date"
-accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_C$Analysis_Type <- "Estimated Introduction Date"
 accumulated_D$Analysis_Type <- "Compiled Date"
 
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
@@ -539,7 +539,7 @@ accumulated_A_B_C_D
 ```
 
 ```{r}
-DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
 DATA <- subset(DATA, DATA$Analysis_Type != "Report Date")
 DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
 #plotting total species accumulation over time
@@ -547,11 +547,11 @@ ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = 
   geom_line( size=2, alpha=0.70) +
   scale_color_viridis(discrete = TRUE) +
   scale_x_continuous(breaks = c(1900, 1920, 1940, 1960, 1980, 2000, 2020)) +
-  guides(colour = guide_legend(reverse=T)) +
+ # guides(colour = guide_legend(reverse=T)) +
  theme_light() +
   theme(legend.position = "none",panel.border = element_blank(),legend.title=element_blank()) +
-  labs(title = "Identified Specimens in \n Natural History Collections", x = "Year", y = "Total Naturalized Species")
-ggsave(filename = "HP_ided_specimens.png", device = "png", scale = 1, width =4, dpi = 600)
+  labs(title = "A:  Identified Specimens in \n Natural History Collections", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "Fig4_HP_ided_specimens.png", device = "png", scale = 1, width =4, dpi = 600)
 ```
 
 # Scenario 6: Harvest Points Introduce different cutoff points : REPORTS
@@ -614,24 +614,24 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 ##### 3.2
 Second, simulate the lag between detection and evidence collection
 let's say this takes around 1 years, with some taking longer, up to 5 years
-```{r}
-mean = 10
-SD = 3.5
-skew = 0
-params <- sn::cp2dp(c(mean, SD, skew), "SN")
-
-Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
-Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-#plotting histogram
-# ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
-#   geom_histogram(binwidth = 1) +
-#   theme_light()
-# summary(Detect_Vouch_Lag)
-
-```
+# ```{r}
+# mean = 10
+# SD = 3.5
+# skew = 0
+# params <- sn::cp2dp(c(mean, SD, skew), "SN")
+# 
+# Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
+# Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# #plotting histogram
+# # ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
+# #   geom_histogram(binwidth = 1) +
+# #   theme_light()
+# # summary(Detect_Vouch_Lag)
+# 
+# ```
 
 ##### 3.3
 
@@ -706,12 +706,12 @@ All created by adding or subtracting from the naturalization year
 ```{r}
 sim_spp6$Intro_Year <- sim_spp6$Naturalization_Year - Intro_Nat_Lag$Intro_Nat_Lag
 sim_spp6$Detect_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag
-sim_spp6$Voucher_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag
-sim_spp6$ID_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag
-sim_spp6$Report_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
+sim_spp6$Voucher_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag 
+sim_spp6$ID_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag
+sim_spp6$Report_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
 
 
-sim_spp6$Compile_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
+sim_spp6$Compile_Year <- sim_spp6$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
 
 
 sim_spp6$All_Processing_Lags <- Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
@@ -845,10 +845,10 @@ accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumula
 accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
 accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
 accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
-accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
-accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated$Analysis_Type <- "True Naturalization Date"
+accumulated_A$Analysis_Type <- "Detection Date"
 accumulated_B$Analysis_Type <- "Report Date"
-accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_C$Analysis_Type <- "Estimated Introduction Date"
 accumulated_D$Analysis_Type <- "Compiled Date"
 
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
@@ -870,7 +870,7 @@ accumulated_A_B_C_D
 # ```
 
 ```{r}
-DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
 DATA <- subset(DATA, DATA$Analysis_Type != "Report Date")
 DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
 #plotting total species accumulation over time
@@ -878,11 +878,11 @@ ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = 
   geom_line( size=2, alpha=0.70) +
   scale_color_viridis(discrete = TRUE) +
   scale_x_continuous(breaks = c(1900, 1920, 1940, 1960, 1980, 2000, 2020)) +
-  guides(colour = guide_legend(reverse=T)) +
+ # guides(colour = guide_legend(reverse=T)) +
  theme_light() +
   theme(legend.position = "none",panel.border = element_blank(),legend.title=element_blank()) +
-  labs(title = "Published Reports on Naturalization \n or Invasion Status", x = "Year", y = "Total Naturalized Species")
-ggsave(filename = "HarvPt_reports.png", device = "png", scale = 1, width =4, dpi = 600)
+  labs(title = "B:  Published Reports on Naturalization \n or Invasion Status", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "Fig4_HarvPt_reports.png", device = "png", scale = 1, width =4, dpi = 600)
 ```
 
 # Scenario 7: Access Points Introduce different cutoff points : CONTINUALLY UPDATED DATABASE WITH LAG BETWEEN REPORT AND COMPILE
@@ -945,24 +945,24 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 ##### 3.2
 Second, simulate the lag between detection and evidence collection
 let's say this takes around 1 years, with some taking longer, up to 5 years
-```{r}
-mean = 10
-SD = 3.5
-skew = 0
-params <- sn::cp2dp(c(mean, SD, skew), "SN")
-
-Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
-Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-#plotting histogram
-# ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
-#   geom_histogram(binwidth = 1) +
-#   theme_light()
-# summary(Detect_Vouch_Lag)
-
-```
+# ```{r}
+# mean = 10
+# SD = 3.5
+# skew = 0
+# params <- sn::cp2dp(c(mean, SD, skew), "SN")
+# 
+# Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
+# Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# #plotting histogram
+# # ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
+# #   geom_histogram(binwidth = 1) +
+# #   theme_light()
+# # summary(Detect_Vouch_Lag)
+# 
+# ```
 
 ##### 3.3
 
@@ -1038,12 +1038,12 @@ All created by adding or subtracting from the naturalization year
 ```{r}
 sim_spp7$Intro_Year <- sim_spp7$Naturalization_Year - Intro_Nat_Lag$Intro_Nat_Lag
 sim_spp7$Detect_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag
-sim_spp7$Voucher_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag
-sim_spp7$ID_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag
-sim_spp7$Report_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
+sim_spp7$Voucher_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag 
+sim_spp7$ID_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag
+sim_spp7$Report_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
 
 
-sim_spp7$Compile_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
+sim_spp7$Compile_Year <- sim_spp7$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
 
 
 sim_spp7$All_Processing_Lags <- Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
@@ -1342,10 +1342,10 @@ accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumula
 accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
 accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
 accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
-accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
-accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated$Analysis_Type <- "True Naturalization Date"
+accumulated_A$Analysis_Type <- "Detection Date"
 accumulated_B$Analysis_Type <- "Report Date"
-accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_C$Analysis_Type <- "Estimated Introduction Date"
 accumulated_D$Analysis_Type <- "Compiled Date"
 
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
@@ -1443,24 +1443,24 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 ##### 3.2
 Second, simulate the lag between detection and evidence collection
 let's say this takes around 1 years, with some taking longer, up to 5 years
-```{r}
-mean = 10
-SD = 3.5
-skew = 0
-params <- sn::cp2dp(c(mean, SD, skew), "SN")
-
-Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
-Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-#plotting histogram
-# ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
-#   geom_histogram(binwidth = 1) +
-#   theme_light()
-# summary(Detect_Vouch_Lag)
-
-```
+# ```{r}
+# mean = 10
+# SD = 3.5
+# skew = 0
+# params <- sn::cp2dp(c(mean, SD, skew), "SN")
+# 
+# Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
+# Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# #plotting histogram
+# # ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
+# #   geom_histogram(binwidth = 1) +
+# #   theme_light()
+# # summary(Detect_Vouch_Lag)
+# 
+# ```
 
 ##### 3.3
 
@@ -1528,12 +1528,12 @@ All created by adding or subtracting from the naturalization year
 ```{r}
 sim_spp8$Intro_Year <- sim_spp8$Naturalization_Year - Intro_Nat_Lag$Intro_Nat_Lag
 sim_spp8$Detect_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag
-sim_spp8$Voucher_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag
-sim_spp8$ID_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag
-sim_spp8$Report_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
+sim_spp8$Voucher_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag 
+sim_spp8$ID_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag
+sim_spp8$Report_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
 
 
-#sim_spp8$Compile_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
+#sim_spp8$Compile_Year <- sim_spp8$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
 
 
 sim_spp8$All_Processing_Lags <- Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
@@ -1834,10 +1834,10 @@ accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumula
 accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
 accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
 accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
-accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
-accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated$Analysis_Type <- "True Naturalization Date"
+accumulated_A$Analysis_Type <- "Detection Date"
 accumulated_B$Analysis_Type <- "Report Date"
-accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_C$Analysis_Type <- "Estimated Introduction Date"
 accumulated_D$Analysis_Type <- "Compiled Date"
 
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
@@ -1936,24 +1936,24 @@ colnames(Nat_Detect_Lag) <- "Nat_Detect_Lag"
 ##### 3.2
 Second, simulate the lag between detection and evidence collection
 let's say this takes around 1 years, with some taking longer, up to 5 years
-```{r}
-mean = 10
-SD = 3.5
-skew = 0
-params <- sn::cp2dp(c(mean, SD, skew), "SN")
-
-Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
-Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
-colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
-#plotting histogram
-# ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
-#   geom_histogram(binwidth = 1) +
-#   theme_light()
-# summary(Detect_Vouch_Lag)
-
-```
+# ```{r}
+# mean = 10
+# SD = 3.5
+# skew = 0
+# params <- sn::cp2dp(c(mean, SD, skew), "SN")
+# 
+# Detect_Vouch_Lag <- as.data.frame(round(sn::rsn(10000, dp =params), digits = 0))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# Detect_Vouch_Lag <- subset(Detect_Vouch_Lag, Detect_Vouch_Lag >=0 & Detect_Vouch_Lag <=20)
+# Detect_Vouch_Lag <- as.data.frame(sample(Detect_Vouch_Lag$Detect_Vouch_Lag, 1000))
+# colnames(Detect_Vouch_Lag) <- "Detect_Vouch_Lag"
+# #plotting histogram
+# # ggplot(Detect_Vouch_Lag, aes(x = Detect_Vouch_Lag)) +
+# #   geom_histogram(binwidth = 1) +
+# #   theme_light()
+# # summary(Detect_Vouch_Lag)
+# 
+# ```
 
 ##### 3.3
 
@@ -2021,12 +2021,12 @@ All created by adding or subtracting from the naturalization year
 ```{r}
 sim_spp9$Intro_Year <- sim_spp9$Naturalization_Year - Intro_Nat_Lag$Intro_Nat_Lag
 sim_spp9$Detect_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag
-sim_spp9$Voucher_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag
-sim_spp9$ID_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag
-sim_spp9$Report_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
+sim_spp9$Voucher_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag 
+sim_spp9$ID_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag
+sim_spp9$Report_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
 
 
-#sim_spp9$Compile_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag + Detect_Vouch_Lag$Detect_Vouch_Lag + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
+#sim_spp9$Compile_Year <- sim_spp9$Naturalization_Year + Nat_Detect_Lag$Nat_Detect_Lag  + Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag + Report_Compile_Lag$Report_Compile_Lag
 
 
 sim_spp9$All_Processing_Lags <- Vouch_ID_Lag$Vouch_ID_Lag + ID_Report_Lag$ID_Report_Lag
@@ -2327,10 +2327,10 @@ accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumula
 accumulated_B  <- accumulated_B %>% dplyr::rename(accumulated_species = accumulated_B, No_Taxa = Taxa_Reported)
 accumulated_C  <- accumulated_C %>% dplyr::rename(accumulated_species = accumulated_C, No_Taxa = Taxa_Introduced)
 accumulated_D  <- accumulated_D %>% dplyr::rename(accumulated_species = accumulated_D, No_Taxa = Taxa_Compiled)
-accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
-accumulated_A$Analysis_Type <- "Evidence Collection Date"
+accumulated$Analysis_Type <- "True Naturalization Date"
+accumulated_A$Analysis_Type <- "Detection Date"
 accumulated_B$Analysis_Type <- "Report Date"
-accumulated_C$Analysis_Type <- "Introduction Date"
+accumulated_C$Analysis_Type <- "Estimated Introduction Date"
 accumulated_D$Analysis_Type <- "Compiled Date"
 
 accumulated_A_B_C_D <- rbind(accumulated, accumulated_A, accumulated_B, accumulated_C, accumulated_D)
@@ -2352,7 +2352,7 @@ accumulated_A_B_C_D
 ```
 
 ```{r}
-DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- accumulated_A_B_C_D %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
 DATA <- subset(DATA, DATA$Analysis_Type != "Report Date")
 DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
 #plotting total species accumulation over time
@@ -2360,10 +2360,10 @@ ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = 
   geom_line( size=2, alpha=0.70) +
   scale_color_viridis(discrete = TRUE) +
   scale_x_continuous(breaks = c(1900, 1920, 1940, 1960, 1980, 2000, 2020)) +
-  guides(colour = guide_legend(reverse=T)) +
+ # guides(colour = guide_legend(reverse=T)) +
  theme_light() +
   theme(legend.position = "none",panel.border = element_blank(),legend.title=element_blank()) +
-  labs(title = "All-Species Publication \n Compiled in 2000", x = "Year", y = "Total Naturalized Species")
-ggsave(filename = "allspp2000.png", device = "png", scale = 1, width =4, dpi = 600)
+  labs(title = "C:  All-Species Publication \n Compiled in 2000", x = "Year", y = "Total Naturalized Species")
+ggsave(filename = "Fig4_allspp2000.png", device = "png", scale = 1, width =4, dpi = 600)
 ```
 
