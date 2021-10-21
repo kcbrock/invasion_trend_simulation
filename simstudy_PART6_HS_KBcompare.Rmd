@@ -13,7 +13,7 @@ require(knitr)
 if(!require("pacman")){
 	install.packages("pacman")
 	library(pacman)}
-p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np", "taxize", "data.table", "tibble", "ggridges")
+p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np", "taxize", "data.table", "tibble", "ggridges", "aomisc")
 ```
 
 ## Get Seebens' Data 
@@ -281,8 +281,8 @@ tail(accumulated_B,10)
 ```{r}
 colnames(accumulated_A) <- c("Year", "Taxa_Naturalized", "accumulated")
 colnames(accumulated_B) <- c("Year", "Taxa_Naturalized", "accumulated")
-accumulated_A$usedate <- "Data from Seebens et al."
-accumulated_B$usedate <- "Adjusted Data from Seebens et al."
+accumulated_A$usedate <- "GASFR Data"
+accumulated_B$usedate <- "Adjusted GASFR Data"
 accumulated_A <- rbind(accumulated_A, accumulated_B)
 accumulated_A
 ```
@@ -448,8 +448,8 @@ ggsave(filename = "KB.png", device = "png", scale = 1, width =6, dpi = 600)
 Both analyses on one figure
 
 ```{r}
-startdate = 1905
-enddate = 2005
+startdate = 1900
+enddate = 2020
 
 DATA <- rbind(accumulated_A, accumulated_C)
 DATA <- subset(DATA, usedate != "Very First Record - KB")
@@ -457,15 +457,17 @@ DATA <- subset(DATA, usedate != "Very First Record - KB")
 DATA <- subset(DATA, Year >= startdate)
 DATA <- subset(DATA, Year <= enddate)
 #plotting total species accumulation over time
-ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate, color = usedate)) +
+PanA <- ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated), group = usedate, color = usedate)) +
   geom_line(  size=2, alpha=1) +
   scale_color_viridis(discrete = TRUE) +
-#  scale_x_continuous(breaks = c(1900, 1920, 1940,  1960, 1980, 2000, 2020)) +
-  guides(colour = guide_legend(reverse=T)) +
+  scale_x_continuous(breaks = c(1900, 1920, 1940,  1960, 1980, 2000, 2020)) +
+#  guides(colour = guide_legend(reverse=T)) +
  theme_light() +
-  theme(panel.border = element_blank(),legend.title=element_blank()) +
+  theme( legend.position="top", panel.border = element_blank(),legend.title=element_blank(),
+      legend.margin=margin(c(0,0,0,0))) +
   labs( title = "", x = "Year", y = "Total Naturalized Species")
-ggsave(filename = "both.png", device = "png", scale = 1, width =6, dpi = 600)
+PanA
+ggsave(filename = "both.png", device = "png", dpi = 600)
 
 
 ```
@@ -517,8 +519,6 @@ COMBINED
 ```
 
 ```{r}
-startdate = 1905
-enddate = 2005
 
 DATA <- COMBINED
 #DATA$Year <- as.numeric(levels(DATA$Year))
@@ -527,8 +527,8 @@ DATA <- subset(DATA, FINAL_firstnatdate <= enddate)
 
 #DATA <- subset(Per_isl_nat_KtoH_natonly, yearFirst_EVER_Record_statewide >= 1900)
 
-breaks <- c(1905, 1910,  1915, 1920, 1925, 1930, 1935, 1940, 1945, 1950,  1955, 1960,  1965, 1970,  1975, 1980, 1985, 1990, 1995, 2000, 2005)
-labels = c( "1910",  "1915", "1920", "1925", "1930", "1935", "1940", "1945", "1950",  "1955", "1960",  "1965", "1970",  "1975", "1980", "1985", "1990", "1995", "2000", "2005")
+breaks <- c(1900, 1905, 1910,  1915, 1920, 1925, 1930, 1935, 1940, 1945, 1950,  1955, 1960,  1965, 1970,  1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020)
+labels = c("1905", "1910",  "1915", "1920", "1925", "1930", "1935", "1940", "1945", "1950",  "1955", "1960",  "1965", "1970",  "1975", "1980", "1985", "1990", "1995", "2000", "2005", "2010", "2015", "2020")
 
 DATA$time_binned <- cut(as.numeric(DATA$FINAL_firstnatdate), 
                   breaks=breaks, 
@@ -553,29 +553,247 @@ DATA_All
  
  
 ```{r}
- DATA_All %>%
+ PanB <- DATA_All %>% subset(!is.na(time_binned)) %>% 
 #  mutate(Compilation = fct_reorder(Compilation, time_binned)) %>%
 ggplot( aes(fill=as.factor(Compilation), y=count, x=time_binned))+ 
     geom_bar(position="fill", stat="identity", size = 0.25,  color = "slategrey") +
     scale_fill_viridis(discrete = T, option = "G") +
   #scale_fill_grey() +
-    theme_classic() +
-  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+    theme_light() +
+  theme(axis.title.y = element_text(margin = margin(t = 0, r = 18, b = 0, l = 0)),   plot.margin = unit(c(0.0,0.7,0.3,0.2), "cm"), legend.position="bottom", panel.grid.major = element_blank(),panel.border = element_blank(),legend.title = element_blank(), axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
   labs(x = "Time (5-year bins)", y = "Proportion of Known Records")
 
-
+PanB
 ggsave(filename = "temporal_samplingbias.png", device = "png", scale = 1, width =6, height = 3, dpi = 600)
+```
+
+```{r}
+figure <- multi_panel_figure(
+  width = 150, height = 210,
+  columns = 1, rows = 2)
+
+  figure %>% fill_panel(PanA, row = 1, column = 1) %>%
+  fill_panel(PanB, row = 2, column = 1) %>%
+  
+  save_multi_panel_figure(filename = "Figure5_simstudy.png", dpi = 600)
+```
+
+
+## Model Fitting
+
+```{r}
+startdate = 1950
+enddate = 2005
+
+
+DATA <- rbind(accumulated_A, accumulated_C)
+DATA <- subset(DATA, usedate != "Very First Record - KB")
+#DATA$Year <- as.numeric(levels(DATA$Year))
+DATA <- subset(DATA, Year >= startdate)
+DATA <- subset(DATA, Year <= enddate)
+DATA
+```
+
+```{r}
+unique(DATA$usedate)
+```
+```{r}
+
+#DATA <- subset(Per_isl_nat_KtoH_natonly, yearFirst_EVER_Record_statewide >= 1900)
+
+breaks <- seq(from = 1800, to = 2020, by = 5)
+labels = c("1805", "1810", "1815", "1820", "1825", "1830", "1835", "1840", "1845", "1850", "1855", "1860", "1865", "1870", "1875", "1880", "1885", "1890", "1895", "1900", "1905", "1910",  "1915", "1920", "1925", "1930", "1935", "1940", "1945", "1950",  "1955", "1960",  "1965", "1970",  "1975", "1980", "1985", "1990", "1995", "2000", "2005", "2010", "2015", "2020")
+
+DATA$time_binned <- cut(as.numeric(DATA$Year), 
+                  breaks=breaks, 
+                  include.lowest=TRUE, 
+                  right=TRUE, labels = labels)
+
+DATA
+```
+
+```{r}
+DATA_1 <- DATA %>%
+  group_by(time_binned, usedate) %>%
+ dplyr::summarize(Taxa_Naturalized = sum(Taxa_Naturalized))
+DATA_1
+```
+
+
+```{r}
+DATA_GASFR <- subset(DATA_1, usedate == "Data from This Publication")
+DATA_GASFR <- subset(DATA_GASFR, !is.na(Taxa_Naturalized))
+DATA_GASFR <- subset(DATA_GASFR, !is.na(time_binned))
+DATA_GASFR$time_binned <- as.numeric(DATA_GASFR$time_binned)
+
+##Load data
+x <- DATA_GASFR$time_binned
+y <- DATA_GASFR$Taxa_Naturalized
+
+plot(x, y)
+
+```
+```{r}
+all(is.na(x))
+all(is.na(y))
+```
+```{r}
+unique(x)
 ```
 
 
 
+```{r}
+# set the margins
+tmpmar <- par("mar")
+tmpmar[3] <- 0.5
+par(mar=tmpmar)
+
+# get underlying plot
+x <- DATA_GASFR$time_binned
+y <- DATA_GASFR$Taxa_Naturalized
+plot(x, y, pch=20)
+
+# basic straight line of fit
+fit.lm.o <- glm(y~x)
+co.lm.o <- coef(fit.lm.o)
+co.lm.o
+abline(fit.lm.o, col="blue", lwd=2)
+
+# exponential
+#fm_lm <- lm(log(y) ~ x, DATA_GASFR)
+#st <- list(a = exp(coef(fm_lm)[1]), b = coef(fm_lm)[2])
+#f.ex.o <- function(x,a,b) {a * exp(b * x)}
+#fit.ex.o <- nls(y ~ f.ex.o(x,a,b),
+#              start = st, control = list(maxiter = 1000), trace = T)  
+#co.ex.o <- coef(fit.ex.o)
+#co.ex.o
+#curve(f.ex.o(x, a=co.ex.o[1], b=co.ex.o[2]), add = TRUE, col="green", lwd=2) 
+
+# logarithmic
+f.ln.o <- function(x,a,b) {a * log(x) + b}
+fit.ln.o <- nls(y ~ f.ln.o(x,a,b), start = c(a=1, b=1)) 
+co.ln.o <- coef(fit.ln.o)
+curve(f.ln.o(x, a=co.ln.o[1], b=co.ln.o[2]), add = TRUE, col="orange", lwd=2) 
+
+# polynomial
+f.po.o <- function(x,a,b,d) {(a*x^2) + (b*x) + d}
+fit.po.o <- nls(y ~ f.po.o(x,a,b,d), start = c(a=1, b=1, d=1)) 
+co.po.o <- coef(fit.po.o)
+curve(f.po.o(x, a=co.po.o[1], b=co.po.o[2], d=co.po.o[3]), add = TRUE, col="pink", lwd=2)
+
+# legend
+legend("topleft",
+    legend=c("linear","exponential","logarithmic","polynomial"),
+    col=c("blue","green","orange","pink"),
+    lwd=2,
+    )
+
+```
+
+```{r}
+AIC(fit.lm.o)
+#AIC(fit.ex.o)
+AIC(fit.ln.o)
+AIC(fit.po.o)
+```
+
+```{r}
+model_w1 <- drm(y ~ x, fct = W1.4()) #Weibull type 1 model
+model_w2 <- drm(y ~ x, fct = W2.4()) #Weibull type 2 model
+plot(model_w1,  col="yellow", lwd=2.5)
+plot(model_w2, add=T, col="orange", lwd=2.5)
+```
+
+
+```{r}
+#model_line <- nls(y ~ NLS.linear(x, a, b)) #Linear model
+model_line <- drm(y ~ x, fct = DRC.linear())
+
+model_poly <- drm(y ~ x, fct = DRC.poly2()) #2nd order polynomial model
+model_exp <- drm(y ~ x, fct = DRC.expoGrowth()) #Exponential growth model
+model_decay <- drm(y ~ x, fct = DRC.expoDecay()) #Exponential decay model
+```
+
+
+```{r}
+model_asym <- drm(y ~ x, fct = DRC.asymReg()) #Asymptotic model
+model_pwr <- drm(y ~ x, fct = DRC.powerCurve()) #Power law model
+model_logth <- drm(y ~ x, fct = DRC.logCurve()) #Logarithmic model
+```
+
+
+```{r}
+#model_mm <- drm(y ~ x, fct = MM.2()) #Michaelis-Menten logarithmic model: rapid growth and then plateau
+model_sig <- drm(y ~ x, fct = L.3()) #Sigmoidal/logistic model
+```
+
+
+```{r}
+#model_g1 <- drm(y ~ x, fct = G.3()) #Gompertz sigmoidal curve with long beginning lag
+#model_g2 <- drm(y ~ x, fct = E.3()) #Gompertz sigmoidal curve without beginning lag
+```
+
+
+```{r}
+model_ll <- drm(y ~ x, fct = LL.4()) #Log-logistic model
+model_w1 <- drm(y ~ x, fct = W1.4()) #Weibull type 1 model
+model_w2 <- drm(y ~ x, fct = W2.4()) #Weibull type 2 model
+```
+```{r}
+mod.bragg <- drm(y ~ x, fct = DRC.bragg.3() )
+mod.bragg2 <- drm(y ~ x, fct = DRC.bragg.4() )
+
+```
+
+```{r}
+##Take a look
+#Polynomial curve
+#plot(model_poly,col="darkgrey", lwd=2.5)
 
 
 
+#Convex/concave models
+plot(model_decay, col="purple",lwd=2.5)
+plot(model_asym, add=T, col="darkmagenta", lwd=2.5)
+plot(model_exp, add=T,col="blue", lwd=2.5)
+plot(model_pwr, add=T,col="darkgrey", lwd=2.5)
+plot(model_logth, add=T,col="blue", lwd=2.5)
+#plot(model_mm, add=T,col="green", lwd=2.5)
 
+#Sigmoidal curves
+plot(model_sig, add=T,col="red", lwd=2.5)
+#plot(model_g1, add=T,col="red", lwd=2.5)
+#plot(model_g2, add=T,col="pink", lwd=2.5)
+plot(model_ll, add=T,col="darkorange", lwd=2.5)
+plot(model_w1, add=T, col="yellow", lwd=2.5)
+plot(model_w2, add=T, col="orange", lwd=2.5)
 
+# hump-shaped curves
+plot(mod.bragg, add = T, col = "darkgreen",  lwd=2.5) 
+plot(mod.bragg2, add = T, col = "darkgreen")
 
+#Linear
+plot(model_line, add = T, col="black",  lwd=2.5)
 
+```
+
+```{r}
+##Evaluate fit
+AIC(model_line)
+AIC(model_poly)
+AIC(model_exp)
+AIC(model_decay)
+AIC(model_asym)
+AIC(model_pwr)
+AIC(model_logth)
+AIC(model_sig)
+AIC(model_ll)
+AIC(model_w1)
+AIC(model_w2)
+AIC(mod.bragg)
+AIC(mod.bragg2)
+```
 
 
 
