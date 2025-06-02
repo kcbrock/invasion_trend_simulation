@@ -36,7 +36,7 @@ Here, I'm going to create 1000 hypothetical species that naturalized between 192
  sim_spp$Species_IDNo <- seq(from = 1, to = nrow(sim_spp))
 ```
 
- This histogram represents a scenario where the number of species varies per year, but there's no trend (increasing or decreasing) in he number naturalizing over time.
+ This histogram represents a scenario where the number of species varies per year, but there's no trend (increasing or decreasing) in the number naturalizing over time.
 
  #### Step 2: Simulate Hypothetical Reality - Creating Species Accumulation Curve
  When, plotted as a species accumulation curve over time, it looks linear, like this:
