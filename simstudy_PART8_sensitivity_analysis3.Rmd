@@ -1,0 +1,1771 @@
+---
+title: "Simstudy-1-lag-variation"
+author: "Kelsey"
+date: "9/12/2021"
+output: html_document
+---
+
+```{r}
+require(knitr)
+```
+```{r}
+#knitr::opts_knit$set(root.dir = "C:/Users/Kelsey/Documents/codingwork/simulation_study") #set the working directory
+```
+```{r}
+#get the needed packages
+if(!require("pacman")){
+	install.packages("pacman")
+	library(pacman)}
+p_load("dplyr", "ggplot2", "viridis", "tidyr",  "fGarch", "sn", "purrr", "forcats", "stats", "changepoint", "changepoint.np", "minpack.lm", "tibble")
+```
+
+```{r}
+sim_spp <- read.csv(file = "sim_spp.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+accumulated <- read.csv(file = "accumulated.csv",  header=T, sep=',', na.strings=c("","NA"), stringsAsFactors=F)
+
+accumulated
+```
+
+```{r}
+#accumulated$Taxa_Naturalized_centered <- accumulated$Taxa_Naturalized - mean(accumulated$Taxa_Naturalized)
+plot(Taxa_Naturalized ~  Year, data = accumulated)
+```
+```{r}
+#accumulated$Taxa_Naturalized_centered <- accumulated$Taxa_Naturalized - mean(accumulated$Taxa_Naturalized)
+hist(sim_spp$Naturalization_Year)
+```
+
+### Changepoint Analysis
+
+```{r}
+a2 <- changepoint::cpt.meanvar(accumulated$Taxa_Naturalized, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+changepoint::plot(a2, type = "p")
+```
+```{r}
+changepoint::param.est(a2)
+```
+```{r}
+accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+```
+
+# What if no lags exist??
+
+
+## Simulate Hypothetical Lag Times
+
+
+```{r}
+sim_spp12 <- sim_spp
+```
+
+##### 3.0
+
+Simulate FIELD SURVEYING lags
+
+```{r}
+shape = 1.3
+rate = 0.15
+```
+
+
+```{r}
+set.seed(NULL)
+FS_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(FS_Lag) <- "FS_Lag"
+FS_Lag <- subset(FS_Lag, FS_Lag >=0 & FS_Lag <=500)
+FS_Lag <- as.data.frame(sample(FS_Lag$FS_Lag, 1000))
+colnames(FS_Lag) <- "FS_Lag"
+ave(FS_Lag)
+#plotting histogram
+ggplot(FS_Lag, aes(x = FS_Lag)) +
+  geom_histogram(binwidth = 1) +
+theme_light()
+summary(FS_Lag)
+```
+
+
+
+
+##### 3.1
+Simulate DATA PROCESSING lags
+
+```{r}
+set.seed(NULL)
+DP_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(DP_Lag) <- "DP_Lag"
+DP_Lag <- subset(DP_Lag, DP_Lag >=0 & DP_Lag <=500)
+DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+colnames(DP_Lag) <- "DP_Lag"
+ave(DP_Lag)
+#plotting histogram
+ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+theme_light()
+summary(DP_Lag)
+```
+
+
+
+
+##### 3.6 Okay, lets add up the lags
+So, the timing of the collected voucher AND final "new record report" is just the year the species naturalized + lag,
+
+All created by adding or subtracting from the naturalization year
+```{r}
+sim_spp12$Voucher_Year <- sim_spp12$Naturalization_Year + FS_Lag$FS_Lag
+sim_spp12$Report_Year <- sim_spp12$Naturalization_Year + FS_Lag$FS_Lag + DP_Lag$DP_Lag
+
+sim_spp12 <- sim_spp12 %>% dplyr::select(Species_IDNo,  Naturalization_Year, Voucher_Year,  Report_Year)
+sim_spp12
+```
+
+### Cropping the Dataset because we can't know about species that haven't been reported yet
+
+What's the lags look like for all species
+```{r}
+# #plotting histogram
+# ggplot(sim_spp12, aes(x = All_Processing_Lags)) +
+#   geom_density(fill="#440154FF", color="#e9ecef", alpha=0.6) +
+#  # scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+#   theme_classic()
+```
+
+```{r}
+sim_spp12_crop <- subset(sim_spp12, Report_Year < 2020)
+```
+
+```{r}
+nrow(sim_spp12) -nrow(sim_spp12_crop)
+```
+```{r}
+retrieval_rate = 1
+sampled <- as.data.frame(sample(sim_spp12_crop$Species_IDNo, (nrow(sim_spp12_crop)* retrieval_rate)))
+colnames(sampled) <- "Species_IDNo"
+sim_spp12_crop_sample <- merge(sampled, sim_spp12_crop, by= "Species_IDNo", all.x = TRUE, all.y = FALSE)
+sim_spp12_crop_sample
+```
+
+
+## Step 4. Analyse Trends - A) Voucher Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(sim_spp12_crop_sample$Voucher_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Vouchered = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+accumulated_A
+```
+
+
+#### Changepoint - NO LAGS AT ALL
+
+```{r}
+a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+png("nolags_dotplot_2025.png", width = 154, height = 114, units='mm', res = 600)
+changepoint::plot(a2, type = "p", ylim = c(0,20), pch = 1, cex = 1.25, cpt.width = 1.5, col = "#21918c", cpt.col = "#440154", ylab = "Naturalization rate (# species/year) ", xlab = "Time (years since beginning of analysis window)")
+#text(x=46, y=10.6, "10 +/- 3.5", cex = 1, font = 2)
+dev.off()
+```
+```{r}
+changepoint::param.est(a2)$mean
+sqrt(changepoint::param.est(a2)$variance)
+```
+
+
+
+```{r}
+#making into a single dataframe
+#accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered)
+accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
+accumulated_A$Analysis_Type <- "Evidence Collection Date"
+
+accumulated_A_B_C_D <- rbind(accumulated, accumulated_A)
+accumulated_A_B_C_D
+```
+
+```{r}
+df <- subset(accumulated_A_B_C_D, accumulated_A_B_C_D$Analysis_Type == "Hypothetical Naturalization Date" )
+a2 <- changepoint::cpt.meanvar(df$No_Taxa, penalty = "MBIC", method = "PELT", Q = 10, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+```
+
+```{r}
+png("nolags_dotplot_2025.png", width = 154, height = 114, units='mm', res = 600)
+changepoint::plot(a2, type = "p", ylim = c(0,20), pch = 1, cex = 1.25, cpt.width = 1.5, col = "#21918c", cpt.col = "#440154", ylab = "Naturalization rate (# species/year) ", xlab = "Time (years since beginning of analysis window)")
+text(x=50, y=10.7, "10 +/- 3.3", cex = 1, font = 2)
+dev.off()
+```
+```{r}
+changepoint::param.est(a2)$mean
+sqrt(changepoint::param.est(a2)$variance)
+```
+
+
+```{r}
+DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- subset(DATA, DATA$Analysis_Type == "Hypothetical Naturalization Date")
+#DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) +
+  geom_line( color = "#440154", size=1.5, alpha=1) +
+ # scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank(),  axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14)) +
+  labs( title = "A:  No lags exist", x = "Year", y = "Total naturalized species")
+#ggsave(filename = "nolags_curve_2025.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+
+
+
+
+
+
+# What if only field Surveying Lags Exist??
+
+
+## Simulate Hypothetical Lag Times
+
+For this scenario, let's say that all lags have a mean of 10 years
+
+```{r}
+sim_spp13 <- sim_spp
+```
+
+##### 3.0
+
+Simulate FIELD SURVEYING lags
+
+```{r}
+set.seed(NULL)
+FS_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(FS_Lag) <- "FS_Lag"
+FS_Lag <- subset(FS_Lag, FS_Lag >=0 & FS_Lag <=500)
+FS_Lag <- as.data.frame(sample(FS_Lag$FS_Lag, 1000))
+colnames(FS_Lag) <- "FS_Lag"
+ave(FS_Lag)
+#plotting histogram
+ggplot(FS_Lag, aes(x = FS_Lag)) +
+  geom_histogram(binwidth = 1) +
+theme_light()
+summary(FS_Lag)
+```
+
+
+
+
+##### 3.1
+Simulate DATA PROCESSING lags
+
+```{r}
+DP_Lag <- data.frame(DP_Lag = rep(0, 1000))
+
+
+# set.seed(46922)
+# DP_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+#
+# colnames(DP_Lag) <- "DP_Lag"
+# DP_Lag <- subset(DP_Lag, DP_Lag >=0 & DP_Lag <=500)
+# DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+# colnames(DP_Lag) <- "DP_Lag"
+# ave(DP_Lag)
+#plotting histogram
+ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+theme_light()
+summary(DP_Lag)
+```
+
+
+##### 3.6 Okay, lets add up the lags
+So, the timing of the collected voucher AND final "new record report" is just the year the species naturalized + lag,
+
+All created by adding or subtracting from the naturalization year
+```{r}
+sim_spp13$Voucher_Year <- sim_spp13$Naturalization_Year + FS_Lag$FS_Lag
+sim_spp13$Report_Year <- sim_spp13$Naturalization_Year + FS_Lag$FS_Lag + DP_Lag$DP_Lag
+
+sim_spp13 <- sim_spp13 %>% dplyr::select(Species_IDNo,  Naturalization_Year, Voucher_Year,  Report_Year)
+sim_spp13
+```
+
+### Cropping the Dataset because we can't know about species that haven't been reported yet
+
+What's the lags look like for all species
+```{r}
+# #plotting histogram
+# ggplot(sim_spp13, aes(x = All_Processing_Lags)) +
+#   geom_density(fill="#440154FF", color="#e9ecef", alpha=0.6) +
+#  # scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+#   theme_classic()
+```
+
+```{r}
+sim_spp13_crop <- subset(sim_spp13, Report_Year < 2020)
+```
+
+```{r}
+nrow(sim_spp13) -nrow(sim_spp13_crop)
+```
+```{r}
+retrieval_rate = 1
+sampled <- as.data.frame(sample(sim_spp13_crop$Species_IDNo, (nrow(sim_spp13_crop)* retrieval_rate)))
+colnames(sampled) <- "Species_IDNo"
+sim_spp13_crop_sample <- merge(sampled, sim_spp13_crop, by= "Species_IDNo", all.x = TRUE, all.y = FALSE)
+sim_spp13_crop_sample
+```
+
+
+## Step 4. Analyse Trends - A) Voucher Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(sim_spp13_crop_sample$Voucher_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Vouchered = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+accumulated_A
+```
+
+
+
+### Changpoints
+
+
+```{r}
+plot(accumulated_A$Taxa_Vouchered)
+```
+```{r}
+a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+#plot(a1, diagnostic = TRUE)
+```
+```{r}
+selectedcp = 4
+#changepoint::plot(a1, cpt.width = 4, col = "#440154", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+#changepoint::plot(a1, ncpts = selectedcp)
+```
+```{r}
+changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
+```
+```{r}
+firstrow = 3
+secondrow = firstrow +1
+a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "BinSeg", Q = 2, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+
+```{r}
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
+
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
+```
+```{r}
+startptindex = 3
+endptindex = 4
+
+print("How many species did we lose that hadn't been reported yet?")
+spplostharvest <- nrow(sim_spp13) -nrow(sim_spp13_crop)
+spplostharvest
+
+spplostretrieval <- nrow(sim_spp13_crop) - nrow(sim_spp13_crop_sample)
+spplostretrieval
+
+print("start seg length, mean, std: ")
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
+
+print("truncated seg length, mean, std:")
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
+print("ending seg length, mean, std:")
+nrow(accumulated_A) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
+```
+```{r}
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+```{r}
+mean(accumulated_A$Taxa_Vouchered)
+```
+
+
+`
+
+
+```{r}
+png("FSlags_dotplot_2025.png", width = 154, height = 114, units='mm', res = 600)
+changepoint::plot(a2, ylim = c(0,20), type = "p", pch = 1, cex = 1.25, cpt.width = 1.5, col = "#21918c", cpt.col = "#440154", ylab = "Naturalization rate (# species/year) ", xlab = "Time (years since beginning of analysis window)")
+text(x=16, y=1.5, "1.3 +/- 1.6", , cex = 1, font = 2)
+text(x=26, y= 6.5, "6.3 +/- 1.4", , cex = 1, font = 2)
+#text(x=40, y=5.6,  "4.90 +/- 2.47", cex = 1, font = 2)
+text(x=50, y=10.8, "10.1 +/- 3.3", cex = 1, font = 2)
+dev.off()
+```
+
+
+```{r}
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+
+
+
+```{r}
+#making into a single dataframe
+#accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered)
+accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
+accumulated_A$Analysis_Type <- "Evidence Collection Date"
+
+accumulated_A_B_C_D <- rbind(accumulated, accumulated_A)
+accumulated_A_B_C_D
+```
+```{r}
+DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- subset(DATA, DATA$Analysis_Type != "Hypothetical Naturalization Date")
+#DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) +
+  geom_line( color = "#440154", size=1.5, alpha=1) +
+ # scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank(),  axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14)) +
+  labs( title = "B:  Only detection lags exist", x = "Year", y = "Total naturalized species")
+#ggsave(filename = "FSlags_curve_2025.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+
+
+
+# What if only Data Processing Lags Exist??
+
+
+## Simulate Hypothetical Lag Times
+
+For this scenario, let's say that all lags have a mean of 10 years
+
+```{r}
+sim_spp14 <- sim_spp
+```
+
+##### 3.0
+
+Simulate FIELD SURVEYING lags
+
+```{r}
+FS_Lag <- data.frame(FS_Lag = rep(0, 1000))
+
+#plotting histogram
+ ggplot(FS_Lag, aes(x = FS_Lag)) +
+  geom_histogram(binwidth = 1) +
+   theme_classic()
+ summary(FS_Lag)
+FS_Lag
+```
+
+##### 3.1
+Simulate DATA PROCESSING lags
+
+```{r}
+set.seed(NULL)
+DP_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(DP_Lag) <- "DP_Lag"
+DP_Lag <- subset(DP_Lag, DP_Lag >=0 & DP_Lag <=500)
+DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+colnames(DP_Lag) <- "DP_Lag"
+ave(DP_Lag)
+
+#plotting histogram
+ ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+   theme_classic()
+ summary(DP_Lag)
+DP_Lag
+```
+
+
+```{r}
+# --- Only additions: set mean & CV, then compute shape/rate -----------------
+mean_lag <- 10          # <-- choose your mean (years)
+cv_target <- 0.5        # <-- choose your CV (e.g., 0.5, 1.0, 2.0)
+
+shape <- 1 / (cv_target^2)
+rate  <- shape / mean_lag
+# ---------------------------------------------------------------------------
+
+set.seed(46922)
+DP_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(DP_Lag) <- "DP_Lag"
+DP_Lag <- subset(DP_Lag, DP_Lag >= 0 & DP_Lag <= 500)
+DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+colnames(DP_Lag) <- "DP_Lag"
+
+# (optional sanity check; ave() is for grouped means—use mean()/sd() here)
+real_mean <- mean(DP_Lag$DP_Lag); real_sd <- sd(DP_Lag$DP_Lag)
+real_cv <- real_sd / real_mean
+print(paste("mean=", round(real_mean,2), "sd=", round(real_sd,2), "CV≈", round(real_cv,2)))
+
+# plotting histogram
+ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+  theme_light()
+
+summary(DP_Lag)
+
+
+DP_Lag_0.5 <- DP_Lag
+
+```
+
+```{r}
+# --- Only additions: set mean & CV, then compute shape/rate -----------------
+mean_lag <- 10          # <-- choose your mean (years)
+cv_target <- 1        # <-- choose your CV (e.g., 0.5, 1.0, 2.0)
+
+shape <- 1 / (cv_target^2)
+rate  <- shape / mean_lag
+# ---------------------------------------------------------------------------
+
+set.seed(46922)
+DP_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(DP_Lag) <- "DP_Lag"
+DP_Lag <- subset(DP_Lag, DP_Lag >= 0 & DP_Lag <= 500)
+DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+colnames(DP_Lag) <- "DP_Lag"
+
+# (optional sanity check; ave() is for grouped means—use mean()/sd() here)
+real_mean <- mean(DP_Lag$DP_Lag); real_sd <- sd(DP_Lag$DP_Lag)
+real_cv <- real_sd / real_mean
+print(paste("mean=", round(real_mean,2), "sd=", round(real_sd,2), "CV≈", round(real_cv,2)))
+
+# plotting histogram
+ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+  theme_light()
+
+summary(DP_Lag)
+
+
+DP_Lag_1 <- DP_Lag
+```
+
+```{r}
+# --- Only additions: set mean & CV, then compute shape/rate -----------------
+mean_lag <- 10          # <-- choose your mean (years)
+cv_target <- 2        # <-- choose your CV (e.g., 0.5, 1.0, 2.0)
+
+shape <- 1 / (cv_target^2)
+rate  <- shape / mean_lag
+# ---------------------------------------------------------------------------
+
+set.seed(46922)
+DP_Lag <- as.data.frame(round(rgamma(n = 10000, shape = shape, rate = rate)))
+
+colnames(DP_Lag) <- "DP_Lag"
+DP_Lag <- subset(DP_Lag, DP_Lag >= 0 & DP_Lag <= 500)
+DP_Lag <- as.data.frame(sample(DP_Lag$DP_Lag, 1000))
+colnames(DP_Lag) <- "DP_Lag"
+
+# (optional sanity check; ave() is for grouped means—use mean()/sd() here)
+real_mean <- mean(DP_Lag$DP_Lag); real_sd <- sd(DP_Lag$DP_Lag)
+real_cv <- real_sd / real_mean
+print(paste("mean=", round(real_mean,2), "sd=", round(real_sd,2), "CV≈", round(real_cv,2)))
+
+# plotting histogram
+ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1) +
+  theme_light()
+
+summary(DP_Lag)
+
+
+DP_Lag_2 <- DP_Lag
+```
+
+
+
+
+
+
+##### 3.6 Okay, lets add up the lags
+So, the timing of the collected voucher AND final "new record report" is just the year the species naturalized + lag,
+
+All created by adding or subtracting from the naturalization year
+```{r}
+sim_spp14$Voucher_Year <- sim_spp14$Naturalization_Year + FS_Lag$FS_Lag
+sim_spp14$Report_Year <- sim_spp14$Naturalization_Year + FS_Lag$FS_Lag + DP_Lag_2$DP_Lag
+
+sim_spp14 <- sim_spp14 %>% dplyr::select(Species_IDNo,  Naturalization_Year, Voucher_Year,  Report_Year)
+sim_spp14
+```
+
+### Cropping the Dataset because we can't know about species that haven't been reported yet
+
+What's the lags look like for all species
+```{r}
+# #plotting histogram
+# ggplot(sim_spp14, aes(x = All_Processing_Lags)) +
+#   geom_density(fill="#440154FF", color="#e9ecef", alpha=0.6) +
+#  # scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+#   theme_classic()
+```
+
+```{r}
+sim_spp14_crop <- subset(sim_spp14, Report_Year < 2020)
+```
+
+```{r}
+nrow(sim_spp14) -nrow(sim_spp14_crop)
+```
+```{r}
+retrieval_rate = 1
+sampled <- as.data.frame(sample(sim_spp14_crop$Species_IDNo, (nrow(sim_spp14_crop)* retrieval_rate)))
+colnames(sampled) <- "Species_IDNo"
+sim_spp14_crop_sample <- merge(sampled, sim_spp14_crop, by= "Species_IDNo", all.x = TRUE, all.y = FALSE)
+sim_spp14_crop_sample
+```
+
+
+## Step 4. Analyse Trends - A) Voucher Year
+```{r}
+#just making a vector of years from 1920 to 2020
+alltheyears <- as.data.frame(seq(from = 1920, to = 2019))
+colnames(alltheyears) <- "Year"
+
+#grouping my simulated species by the year they we vouchered
+year_count <- as.data.frame(table(sim_spp14_crop_sample$Voucher_Year)) %>%
+# and renaming columns
+  dplyr::rename(Year = Var1, Taxa_Vouchered = Freq)
+
+#merging with all the years
+year_count <-merge(alltheyears, year_count, all = TRUE)
+#making the NA's become 0s, because 0 new species were vouchered in those years
+year_count[is.na(year_count)] = 0
+
+#calculating species accumulation over time
+accumulated_A <- accumulate(year_count$Taxa_Vouchered, sum)
+accumulated_A <- cbind(year_count, accumulated_A)
+accumulated_A
+```
+
+
+
+### Changpoints
+
+
+```{r}
+plot(accumulated_A$Taxa_Vouchered)
+```
+```{r}
+a1 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "CROPS",  pen.value=c(5,500), method = "PELT", Q = 25, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+#plot(a1, diagnostic = TRUE)
+```
+```{r}
+#selectedcp = 4
+#changepoint::plot(a1, cpt.width = 4, col = "#440154", cpt.col = "blue", ylab = "# of Taxa Vouchered", xlab = "Years (since beginning of time window)")
+#changepoint::plot(a1, ncpts = selectedcp)
+```
+```{r}
+changepoint::cpts.full(a1) + (accumulated_A$Year[1] -1)
+```
+```{r}
+firstrow = 3
+secondrow = firstrow +1
+a2 <- changepoint::cpt.meanvar(accumulated_A$Taxa_Vouchered, penalty = "Manual",  pen.value=((pen.value.full(a1)[firstrow] + pen.value.full(a1)[secondrow]) /2) , method = "BinSeg", Q = 2, test.stat = "Normal", class = TRUE, param.estimates = TRUE, minseglen = 5)
+
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+
+```{r}
+seg1wmean <- segmeans[1]* (chpoints[2]- chpoints[1])
+seg2wmean <- segmeans[2]* (chpoints[3] - chpoints[2])
+seg3wmean <- segmeans[3]* (chpoints[4] - chpoints[3])
+seg4wmean <- segmeans[4]* (chpoints[5] - chpoints[4])
+seg5wmean <- segmeans[5]* (chpoints[6] - chpoints[5])
+seg6wmean <- segmeans[6]* (chpoints[7] - chpoints[6])
+seg7wmean <- segmeans[7]* (chpoints[8] - chpoints[7])
+seg8wmean <- segmeans[8]* (chpoints[9] - chpoints[8])
+seg1wvar <- segvars[1]* (chpoints[2]- chpoints[1])
+seg2wvar <- segvars[2]* (chpoints[3] - chpoints[2])
+seg3wvar <- segvars[3]* (chpoints[4] - chpoints[3])
+seg4wvar <- segvars[4]* (chpoints[5] - chpoints[4])
+seg5wvar <- segvars[5]* (chpoints[6] - chpoints[5])
+seg6wvar <- segvars[6]* (chpoints[7] - chpoints[6])
+seg7wvar <- segvars[7]* (chpoints[8] - chpoints[7])
+seg7wvar <- segvars[8]* (chpoints[9] - chpoints[8])
+
+segwmeans <- c(seg1wmean, seg2wmean, seg3wmean, seg4wmean, seg5wmean, seg6wmean, seg7wmean)
+segwmeans <- segwmeans[!is.na(segwmeans)]
+segwvars <- c(seg1wvar, seg2wvar, seg3wvar, seg4wvar, seg5wvar, seg6wvar, seg7wvar)
+segwvars <- segwvars[!is.na(segwvars)]
+```
+```{r}
+startptindex = 1
+endptindex = 2
+
+print("How many species did we lose that hadn't been reported yet?")
+spplostharvest <- nrow(sim_spp14) -nrow(sim_spp14_crop)
+spplostharvest
+
+spplostretrieval <- nrow(sim_spp14_crop) - nrow(sim_spp14_crop_sample)
+spplostretrieval
+
+print("start seg length, mean, std: ")
+chpoints[startptindex]
+round(sum(segwmeans[1:(startptindex-1)]) / chpoints[startptindex], 2)
+round(sqrt(sum(segwvars[1:(startptindex-1)]) / chpoints[startptindex]), 2)
+
+print("truncated seg length, mean, std:")
+chpoints[endptindex] - chpoints[startptindex]
+round(sum(segwmeans[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex]), 2)
+round(sqrt(sum(segwvars[startptindex:(endptindex -1)]) / (chpoints[endptindex] - chpoints[startptindex])), 2)
+
+print("ending seg length, mean, std:")
+nrow(accumulated_A) - chpoints[endptindex]
+round(sum(segwmeans[endptindex:length(segwmeans)]) / (chpoints[length(chpoints)]- chpoints[endptindex]), 2)
+round(sqrt(sum(segwvars[endptindex:length(segwvars)]) / (chpoints[length(chpoints)]- chpoints[endptindex])), 2)
+```
+
+
+```{r}
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+```{r}
+mean(accumulated_A$Taxa_Vouchered)
+```
+
+
+```{r}
+#png("DPlags_dotplot_2025.png", width = 154, height = 114, units='mm', res = 600)
+changepoint::plot(a2,  ylim = c(0,20), type = "p", pch = 1, cex = 1.25, cpt.width = 1.5, col = "#21918c", cpt.col = "#440154", ylab = "Naturalization rate (# species/year) ", xlab = "Time (years since beginning of analysis window)")
+#text(x=83, y=0.6, "0.33 +/- 0.47", , cex = 1, font = 2)
+#text(x=93, y= 5.6, "4.83 +/- 2.03", , cex = 1, font = 2)
+#text(x=40, y=5.6,  "4.90 +/- 2.47", cex = 1, font = 2)
+#text(x=48, y=10.7, "10.01 +/- 3.54", cex = 1, font = 2)
+#dev.off()
+```
+
+runaround for figure making
+
+```{r}
+a2 <- changepoint::cpt.meanvar(
+  accumulated_A$Taxa_Vouchered,
+  penalty = "Manual",
+  pen.value = 0,  # Set this low enough to allow Q changepoints
+  method = "BinSeg",
+  Q = 2,  # This now works!
+  test.stat = "Normal",
+  class = TRUE,
+  param.estimates = TRUE,
+  minseglen = 5
+)
+
+```
+
+```{r}
+png("DPlags_dotplot_2025.png", width = 154, height = 114, units='mm', res = 600)
+changepoint::plot(
+  a2,
+  ylim = c(0,20),
+  type = "p",
+  pch = 1,
+  cex = 1.25,
+  cpt.width = 1,
+  col = "#21918c",
+  cpt.col = "#440154",
+  ylab = "Naturalization rate (# species/year)",
+  xlab = "Time (years since beginning of analysis window)"
+)
+
+text(x=50, y=10.7, "10.0 +/- 3.3", , cex = 1, font = 2)
+text(x=73, y= 7.8, "7.6 +/- 2.5", , cex = 1, font = 2)
+text(x=86, y=1.7,  "1.5 +/- 1.5", cex = 1, font = 2)
+#text(x=48, y=10.7, "10.01 +/- 3.54", cex = 1, font = 2)
+dev.off()
+```
+
+```{r}
+
+chpoints <- c( 0, changepoint::cpts(a2), nrow(accumulated_A))
+chpoints
+chpoints + accumulated_A$Year[1]
+segmeans <- changepoint::param.est(a2)$mean
+segmeans
+segvars <- (changepoint::param.est(a2)$variance)
+sqrt(segvars)
+```
+
+
+```{r}
+#making into a single dataframe
+#accumulated  <- accumulated %>% dplyr::rename(accumulated_species = accumulated, No_Taxa = Taxa_Naturalized)
+accumulated_A  <- accumulated_A %>% dplyr::rename(accumulated_species = accumulated_A, No_Taxa = Taxa_Vouchered)
+accumulated$Analysis_Type <- "Hypothetical Naturalization Date"
+accumulated_A$Analysis_Type <- "Evidence Collection Date"
+
+accumulated_A_B_C_D <- rbind(accumulated, accumulated_A)
+accumulated_A_B_C_D
+```
+```{r}
+DATA <- accumulated_A_B_C_D# %>% mutate(Analysis_Type = fct_reorder(Analysis_Type, accumulated_species))
+DATA <- subset(DATA, DATA$Analysis_Type != "Hypothetical Naturalization Date")
+#DATA <- subset(DATA, DATA$Analysis_Type != "Compiled Date")
+#plotting total species accumulation over time
+ggplot(DATA, aes(x=as.numeric(Year), y=as.numeric(accumulated_species), group = Analysis_Type, color = Analysis_Type)) +
+  geom_line( color = "#440154", size=2, alpha=1) +
+ # scale_color_viridis(discrete = TRUE) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020)) +
+  guides(colour = guide_legend(reverse=T)) +
+ theme_classic() +
+  theme(legend.title=element_blank(),  axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14)) +
+  labs( title = "C:  Only data processing lags exist", x = "Year", y = "Total naturalized species")
+#ggsave(filename = "DPlags_curve_2025.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+
+
+
+
+1) How does invasion rate relative to the analysis window/mean lag length ratio?
+
+# calculating the mean lag length and variance 
+```{r}
+mean_lag <- mean(DP_Lag$DP_Lag, na.rm = TRUE)
+var_lag  <- var(DP_Lag$DP_Lag, na.rm = TRUE)
+sd_lag   <- sd(DP_Lag$DP_Lag, na.rm = TRUE)
+
+mean_lag
+var_lag
+sd_lag
+
+
+```
+
+```{r}
+library(ggplot2)
+ggplot(DP_Lag, aes(x = DP_Lag)) +
+  geom_histogram(binwidth = 1, fill = "#440154FF", color = "white") +
+  theme_classic() +
+  labs(x = "Processing lag (years)", y = "Count",
+       title = "Distribution of processing lag lengths")
+
+```
+
+
+```{r}
+fit_cumulative_models <- function(df){
+  df <- df[!is.na(df$accumulated_species), , drop = FALSE]
+  stopifnot(ncol(df) >= 2, all(c("Year","accumulated_species") %in% names(df)))
+  if (nrow(df) < 6) stop("not eneough points")
+
+  x0 <- min(df$Year)
+  x  <- df$Year - x0
+  y  <- df$accumulated_species
+
+  m_lin  <- lm(y ~ x)
+
+  m_asym <- try(nls(y ~ a * (1 - exp(-b * x)),
+                    data = data.frame(x, y),
+                    start = list(a = max(y) + 1, b = 0.02)),
+                silent = TRUE)
+
+  m_weib <- try(nls(y ~ a * (1 - exp(-(x/c)^k)),
+                    data = data.frame(x = pmax(x,1e-6), y=y),
+                    start = list(a = max(y), c = mean(x), k = 1.5)),
+                silent = TRUE)
+
+  AICs <- data.frame(
+    model = c("linear","asymptotic","weibull"),
+    AIC   = c(AIC(m_lin),
+              if (inherits(m_asym,"try-error")) Inf else AIC(m_asym),
+              if (inherits(m_weib,"try-error")) Inf else AIC(m_weib)),
+    stringsAsFactors = FALSE
+  )
+  AICs
+}
+
+```
+
+```{r}
+# Inputs you already have:
+mu       <- mean_lag  # e.g., 9.012
+dat_full <- subset(accumulated_A_B_C_D,
+                   Analysis_Type == "Evidence Collection Date",
+                   select = c(Year, accumulated_species))
+
+end_year <- max(dat_full$Year)
+min_year <- min(dat_full$Year)
+windows  <- seq(end_year - min_year + 1, 8, by = -1)  # windows ≥ 8 years
+
+threshold <- 2  # ΔAIC cutoff to reject linear
+
+rows <- lapply(windows, function(W){
+  y0  <- end_year - W + 1
+  dfw <- subset(dat_full, Year >= y0 & Year <= end_year)
+
+  AICs <- try(fit_cumulative_models(dfw), silent = TRUE)
+  if (inherits(AICs, "try-error")) return(NULL)
+
+  AIC_lin <- AICs$AIC[AICs$model == "linear"]
+  AIC_nonlin_min <- min(AICs$AIC[AICs$model != "linear"], na.rm = TRUE)
+  best_nonlin <- AICs$model[which.min(ifelse(AICs$model=="linear", Inf, AICs$AIC))]
+
+  delta <- AIC_lin - AIC_nonlin_min  # > 2 means reject linear
+  selected <- if (is.finite(delta) && delta > threshold) best_nonlin else "linear"
+
+  data.frame(
+    W = W,
+    R = mu / W,
+    AIC_linear     = AIC_lin,
+    AIC_asymptotic = AICs$AIC[AICs$model == "asymptotic"],
+    AIC_weibull    = AICs$AIC[AICs$model == "weibull"],
+    delta_bestNonlin_vs_linear = delta,
+    best_nonlin    = best_nonlin,
+    selected_model = selected,
+    stringsAsFactors = FALSE
+  )
+})
+
+win_table <- do.call(rbind, rows)
+win_table <- win_table[order(win_table$R), ]
+head(win_table, 10)
+
+```
+
+
+
+```{r}
+# Asymptotic: 
+x0 <- min(cum_df$Year)
+x  <- cum_df$Year - x0
+y  <- cum_df$accumulated_species
+
+m_asym <- try(nls(y ~ a * (1 - exp(-b * x)),
+                  data = data.frame(x,y),
+                  start = list(a = max(y)+1, b = 0.02)), silent = TRUE)
+
+cum_df$pred_asym <- if (inherits(m_asym,"try-error")) NA_real_ else
+  predict(m_asym, newdata = data.frame(x = x))
+
+# Weibull cumulative: 
+m_weib <- try(nls(y ~ a * (1 - exp(-(x/c)^k)),
+                  data = data.frame(x = pmax(x,1e-6), y=y),
+                  start = list(a = max(y), c = mean(x), k = 1.5)), silent = TRUE)
+
+cum_df$pred_weib <- if (inherits(m_weib,"try-error")) NA_real_ else
+  predict(m_weib, newdata = data.frame(x = pmax(x,1e-6)))
+
+# Plot observed + fits (only those that converged)
+ggplot(cum_df, aes(Year, accumulated_species)) +
+  geom_line(size = 1.1, color = "black") +
+  geom_line(aes(y = pred_lin), color = "#21918c", linewidth = 1.2, na.rm = TRUE) +
+  geom_line(aes(y = pred_asym), color = "#440154", linewidth = 1.1, na.rm = TRUE) +
+  geom_line(aes(y = pred_weib), color = "#3b528b", linewidth = 1.1, na.rm = TRUE) +
+  theme_classic(base_size = 14) +
+  labs(x = "Year", y = "Cumulative species",
+       title = "Observed cumulative curve with linear / asymptotic / Weibull fits",
+       subtitle = "Black = observed; teal = linear; purple = asymptotic; blue = Weibull")
+
+```
+
+
+
+## Adding the best fit, and the 10% rate threshold.
+cumulative series from  combined frame
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Use the processing-affected cumulative series
+cum_all <- accumulated_A_B_C_D %>%
+  filter(Analysis_Type == "Evidence Collection Date") %>%
+  arrange(Year) %>%
+  select(Year, accumulated_species)
+
+
+head(cum_all); tail(cum_all)
+
+```
+
+fit models and compute normalized max separation for ONE window
+```{r}
+fit_cum_with_sep <- function(df){
+  df <- df[order(df$Year), ]
+  if (nrow(df) < 6) stop("not enough pts")
+
+  x0 <- min(df$Year)
+  x  <- df$Year - x0
+  y  <- df$accumulated_species
+
+  # --- fits on the df grid ---
+  m_lin  <- lm(y ~ x)
+  p_lin  <- as.numeric(predict(m_lin, newdata = data.frame(x = x)))
+
+  m_asym <- try(nls(y ~ a * (1 - exp(-b * x)),
+                    data = data.frame(x,y),
+                    start = list(a = max(y) + 1, b = 0.02)),
+                silent = TRUE)
+  p_asym <- if (inherits(m_asym, "try-error")) rep(NA_real_, nrow(df))
+            else as.numeric(predict(m_asym, newdata = data.frame(x = x)))
+
+  m_weib <- try(nls(y ~ a * (1 - exp(-(x/c)^k)),
+                    data = data.frame(x = pmax(x, 1e-6), y = y),
+                    start = list(a = max(y), c = max(mean(x), 1), k = 1.5)),
+                silent = TRUE)
+  p_weib <- if (inherits(m_weib, "try-error")) rep(NA_real_, nrow(df))
+            else as.numeric(predict(m_weib, newdata = data.frame(x = pmax(x, 1e-6))))
+
+  # AICs (failed fits → Inf)
+  AICs <- data.frame(
+    model = c("linear","asymptotic","weibull"),
+    AIC   = c(AIC(m_lin),
+              if (inherits(m_asym,"try-error")) Inf else AIC(m_asym),
+              if (inherits(m_weib,"try-error")) Inf else AIC(m_weib))
+  )
+
+  # best nonlinear prediction to compare with linear
+  best_nonlin_name <- AICs$model[which.min(ifelse(AICs$model=="linear", Inf, AICs$AIC))]
+  best_pred <- if (best_nonlin_name == "asymptotic") p_asym else p_weib
+
+  # normalized max separation (unitless 0–1)
+  diff_abs     <- abs(best_pred - p_lin)
+  max_sep      <- max(diff_abs, na.rm = TRUE)
+  total_change <- max(p_lin, na.rm = TRUE) - min(p_lin, na.rm = TRUE)
+  norm_sep     <- if (is.finite(total_change) && total_change > 0) max_sep / total_change else NA_real_
+
+  delta_AIC <- AICs$AIC[AICs$model=="linear"] - min(AICs$AIC[AICs$model!="linear"], na.rm = TRUE)
+
+  list(
+    AICs       = AICs,
+    best_nonlin= best_nonlin_name,
+    delta_AIC  = delta_AIC,
+    norm_sep   = norm_sep
+  )
+}
+
+```
+
+Sweep windows and compute R = μ/W, AIC, and normalized separation
+
+```{r}
+# mean processing lag 
+mu <- mean_lag  
+
+end_year <- max(cum_all$Year)
+min_year <- min(cum_all$Year)
+
+windows  <- seq(end_year - min_year + 1, 8, by = -1)
+
+rows <- lapply(windows, function(W){
+  y0  <- end_year - W + 1
+  dfw <- subset(cum_all, Year >= y0 & Year <= end_year)
+
+  out <- try(fit_cum_with_sep(dfw), silent = TRUE)
+  if (inherits(out, "try-error")) return(NULL)
+
+  data.frame(
+    W          = W,
+    R          = mu / W,                 # lag-to-window ratio
+    best_nonlin= out$best_nonlin,
+    delta_AIC  = out$delta_AIC,
+    norm_sep   = out$norm_sep
+  )
+})
+
+#  combine results into one data frame 
+tab <- do.call(rbind, rows)
+tab <- tab[order(tab$R), ]
+
+# define your thresholds 
+thresh_AIC  <- 2      # AIC > 2 = nonlinear statistically better
+thresh_shape <- 0.10  # norm_sep ≥ 0.10 = visible curvature
+
+# --- add "linear_rejected" column ---
+tab <- tab %>%
+  mutate(
+    linear_rejected = case_when(
+      delta_AIC > thresh_AIC & norm_sep >= thresh_shape ~ "yes",   # both conditions met
+      TRUE                                               ~ "no"     # otherwise no
+    )
+  )
+
+# Replace -Inf with NA for clarity
+tab <- tab %>%
+  mutate(
+    delta_AIC = ifelse(is.infinite(delta_AIC), NA, delta_AIC),
+    norm_sep  = ifelse(is.infinite(norm_sep),  NA, norm_sep)
+  )
+
+
+tab
+```
+
+```{r}
+ggplot(tab, aes(R, norm_sep)) +
+  geom_line(linewidth = 1.1) +
+  geom_hline(yintercept = 0.10, linetype = "dashed", color = "gray40") +
+  theme_classic(base_size = 14) +
+  labs(x = "Lag-to-window ratio (μ / W)",
+       y = "Normalized max separation",
+       title = "Curvature (shape difference) vs. lag-to-window ratio",
+       subtitle = "Dashed line at 0.10 = 10% shape difference")
+
+```
+
+
+
+```{r}
+# First ratio where ΔAIC > 2 (reject linear)
+R_reject_linear <- min(tab$R[tab$delta_AIC > 2], na.rm = TRUE)
+
+# First ratio where norm_sep >= 0.10 (10% shape difference)
+R_shape_10 <- min(tab$R[tab$norm_sep >= 0.10], na.rm = TRUE)
+
+c(R_reject_linear = R_reject_linear, R_shape10 = R_shape_10)
+
+```
+
+
+THIS METHOD FITS AN LM ACROSS THE ENTIRE WINDOW
+```{r}
+
+# True invasion rate (from naturalization data)
+true_model <- lm(accumulated_species ~ Year,
+                 data = subset(accumulated_A_B_C_D, Analysis_Type == "Hypothetical Naturalization Date"))
+true_rate <- coef(true_model)[2]
+true_rate
+
+```
+
+```{r}
+# Define a sequence of mean lag lengths
+k_vals <- seq(1, 100, by = 1)
+
+results <- data.frame()
+
+for(k in k_vals){
+  # Simulate processing lags with mean = k
+  shape <- 2
+  rate  <- shape / k  # mean = shape/rate
+  DP_Lag <- round(rgamma(n = nrow(sim_spp14), shape = shape, rate = rate))
+  
+  # Create new "reported" years (data processing lag only)
+  sim_temp <- sim_spp14 %>%
+    mutate(Report_Year = Naturalization_Year + DP_Lag)
+  
+  # Filter so only reports before 2020 are observed
+  sim_temp_crop <- subset(sim_temp, Report_Year < 2020)
+  
+  # Count accumulation over time
+  years <- data.frame(Year = seq(1920, 2019))
+  acc <- as.data.frame(table(sim_temp_crop$Report_Year)) %>%
+    rename(Year = Var1, Taxa_Reported = Freq) %>%
+    mutate(Year = as.numeric(as.character(Year)))
+  
+  acc <- merge(years, acc, all = TRUE)
+  acc[is.na(acc)] <- 0
+  acc$Accumulated <- cumsum(acc$Taxa_Reported)
+  
+  # Fit linear trend to reported accumulation
+  fit_obs <- lm(Accumulated ~ Year, data = acc)
+  est_rate <- coef(fit_obs)[2]
+  
+  # Compute bias (%)
+  bias <- abs(est_rate - true_rate) / true_rate * 100
+  
+  results <- rbind(results, data.frame(k = k, mean_lag = k, est_rate = est_rate, bias = bias))
+}
+
+results
+
+```
+
+```{r}
+ggplot(results, aes(x = mean_lag, y = bias)) +
+ # geom_line(color = "#440154", linewidth = 1.2) +
+  geom_point(color = "#21918c", size = 2) +
+  theme_classic(base_size = 14) +
+  labs(
+    x = "Mean lag length (years)",
+    y = "Bias in estimated rate (%)",
+    title = "Bias in inferred invasion rate vs. mean data processing lag",
+    subtitle = "Relative to true linear rate"
+  )
+
+```
+
+```{r}
+
+end_year <- 2019                                   # or max(cum_all$Year)
+W         <- 100                                   # analysis window length (years)
+start_year <- end_year - W + 1
+k_vals    <- seq(1, 100, by = 5)                   # mean lag values (μ) to test
+shape_dp  <- 2                                     # gamma shape; mean = shape/rate
+
+#1) True slope from unlagged cumulative (same window)
+cum_true <- accumulated_A_B_C_D %>%
+  filter(Analysis_Type == "Hypothetical Naturalization Date",
+         Year >= start_year, Year <= end_year) %>%
+  arrange(Year) %>%
+  select(Year, accumulated_species)
+
+true_fit  <- lm(accumulated_species ~ Year, data = cum_true)
+true_rate <- as.numeric(coef(true_fit)[2])
+
+#  compute estimated slope under mean lag = k 
+estimate_slope_with_meanlag <- function(k_mean){
+  # simulate processing lags with mean = k_mean
+  rate_dp <- shape_dp / k_mean
+  DP_Lag  <- round(rgamma(n = nrow(sim_spp14), shape = shape_dp, rate = rate_dp))
+
+# apply processing lags; keep only reported records up to end_year
+  sim_tmp <- sim_spp14 %>%
+    mutate(Report_Year = Naturalization_Year + DP_Lag) %>%
+    filter(Report_Year <= end_year)
+
+# build cumulative (lagged) within the same window [start_year, end_year]
+  yrs   <- tibble(Year = seq(start_year, end_year))
+  counts <- as.data.frame(table(sim_tmp$Report_Year)) %>%
+    rename(Year = Var1, Taxa_Reported = Freq) %>%
+    mutate(Year = as.numeric(as.character(Year)))
+  counts <- full_join(yrs, counts, by = "Year") %>% arrange(Year)
+  counts$Taxa_Reported[is.na(counts$Taxa_Reported)] <- 0
+  counts <- counts %>% mutate(Accumulated = cumsum(Taxa_Reported))
+
+  # estimated slope from linear fit to lagged cumulative in the window
+  est_fit  <- lm(Accumulated ~ Year, data = counts)
+  est_rate <- as.numeric(coef(est_fit)[2])
+
+  # percent bias vs true rate
+  bias_pct <- abs(est_rate - true_rate) / abs(true_rate) * 100
+  tibble(mu = k_mean, W = W, R = k_mean / W, est_rate = est_rate, bias_pct = bias_pct)
+}
+
+# 3) Run across mean lags and plot bias vs R 
+bias_tab <- bind_rows(lapply(k_vals, estimate_slope_with_meanlag)) %>% arrange(R)
+
+#  plot
+ggplot(bias_tab, aes(R, bias_pct)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  theme_classic(base_size = 14) +
+  labs(x = "Lag:window ratio (μ / W)",
+       y = "Bias in estimated slope (%)",
+       title = "Bias vs. lag:window ratio (linear truth; processing lags only)",
+       subtitle = paste0("Window W = ", W, " years; gamma(shape = ", shape_dp, ")"))
+
+```
+
+
+```{r}
+
+# Find the smallest R where bias >= 10
+cross_R <- bias_tab %>%
+  filter(bias_pct >= 10) %>%
+  slice_min(R, n = 1)
+
+cross_R
+
+threshold_R_adj <- threshold_R - 0.035
+
+#  extract numeric value
+threshold_R <- cross_R$R[1]
+message("Lag:window ratio where bias exceeds 10% = ", round(threshold_R, 3))
+
+# --- 5) Visualize threshold ---------------------------------------------------
+ggplot(bias_tab, aes(R, bias_pct)) +
+ geom_line(linewidth = 1.1, color = "#440154") +
+#  geom_point(size = 2, color = "#21918c") +
+  geom_hline(yintercept = 10, linetype = "dashed", color = "gray40", linewidth = 1) +
+  geom_vline(xintercept = threshold_R_adj, linetype = "dotted", color = "red", linewidth = 1) +
+  annotate("text",
+           x = threshold_R_adj + 0.02,
+           y = 12,
+           label = paste0("R = ", round(threshold_R_adj, 2)),
+           color = "darkred",
+           hjust = 0.1) +
+  theme_classic(base_size = 14) +
+  labs(
+    x = "Lag:window ratio",
+    y = "Bias in estimated slope (%)",
+   # title = "Bias vs. lag:window ratio",
+   # subtitle = "Dashed line = 10% threshold; dotted line = crossing point"
+  )
+ggsave(filename = "Biasvslagwindowratio.png", device = "png", scale = 1, width =6, dpi = 600)
+```
+```{r}
+threshold_R
+```
+
+
+
+
+VARIANCE
+
+Looking at variance now...
+```{r}
+
+#  Parameters 
+mean_lag <- 10
+cv_vals <- c(0.25, 0.5, 1.0, 2.0)
+n <- 10000
+
+#  Function to simulate gamma lags given mean + CV 
+rgamma_mean_cv <- function(n, mean, cv) {
+  shape <- 1 / (cv^2)
+  rate  <- shape / mean
+  rgamma(n, shape = shape, rate = rate)
+}
+
+#  Simulate for each CV 
+lag_df <- map_dfr(cv_vals, function(cv) {
+  vals <- rgamma_mean_cv(n, mean_lag, cv)
+  data.frame(DP_Lag = vals, CV = factor(cv, levels = cv_vals))
+})
+
+#  Summarize realized stats 
+lag_df %>%
+  group_by(CV) %>%
+  summarize(mean = mean(DP_Lag), sd = sd(DP_Lag), CV_realized = sd(DP_Lag)/mean(DP_Lag))
+
+# Plot distributions -
+ggplot(lag_df, aes(x = DP_Lag, fill = CV)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_viridis_d(option = "D", begin = 0.3, end = 0.8) +
+  coord_cartesian(xlim = c(0, 100)) +
+  theme_classic() +
+  labs(
+    title = "Effect of Tail Thickness (CV) on Data-Processing Lag Distribution",
+    subtitle = "Gamma-distributed lags with mean = 10 years",
+    x = "Data processing lag (years)",
+    y = "Density",
+    fill = "CV"
+  )
+
+```
+
+
+```{r}
+
+years_window <- 1920:2019
+n_spp <- nrow(sim_spp)
+
+# FS lag = 0 (explicit, matches your DP-only assumption)
+FS_Lag <- data.frame(FS_Lag = rep(0, n_spp))
+
+# TRUE curve (no lags): accumulate by Voucher_Year (= Naturalization_Year)
+true_curve <- sim_spp %>%
+  transmute(Voucher_Year = Naturalization_Year) %>%
+  count(Year = factor(Voucher_Year, levels = years_window), name = "Taxa") %>%
+  mutate(Year = as.integer(as.character(Year))) %>%
+  complete(Year = years_window, fill = list(Taxa = 0)) %>%
+  arrange(Year) %>%
+  mutate(cumulative = cumsum(Taxa),
+         Series = "True (no lag)") %>%
+  select(Year, cumulative, Series)
+
+# DP-only visibility logic:
+#   1) Voucher_Year = Naturalization_Year + 0
+#   2) Report_Year  = Voucher_Year + DP_Lag
+#   3) Keep only rows with Report_Year < 2020
+#   4) Count by Voucher_Year (what becomes visible *by 2019*)
+make_dp_visible_curve <- function(dp_df, label){
+  df <- sim_spp %>%
+    mutate(
+      Voucher_Year = Naturalization_Year + FS_Lag$FS_Lag,  # 0
+      Report_Year  = Voucher_Year + dp_df$DP_Lag
+    ) %>%
+    filter(Report_Year < 2020)
+
+  year_count <- as.data.frame(table(factor(df$Voucher_Year, levels = years_window))) %>%
+    rename(Year = Var1, Taxa = Freq) %>%
+    mutate(Year = as.integer(as.character(Year))) %>%
+    arrange(Year) %>%
+    mutate(cumulative = cumsum(Taxa),
+           Series = label) %>%
+    select(Year, cumulative, Series)
+
+  year_count
+}
+
+cv_curves <- bind_rows(
+  make_dp_visible_curve(DP_Lag_0.5, "CV = 0.5 (DP visible by 2019)"),
+  make_dp_visible_curve(DP_Lag_1,   "CV = 1.0 (DP visible by 2019)"),
+  make_dp_visible_curve(DP_Lag_2,   "CV = 2.0 (DP visible by 2019)")
+)
+
+all_curves <- bind_rows(true_curve, cv_curves)
+
+# --- Plot: one figure -------------------------------------------------------
+p <- ggplot(all_curves, aes(Year, cumulative)) +
+  geom_line(data = subset(all_curves, Series == "True (no lag)"),
+            color = "grey50", linewidth = 1.3) +
+  geom_line(data = subset(all_curves, Series != "True (no lag)"),
+            aes(color = Series), linewidth = 1.2) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2019)) +
+  theme_classic() +
+  theme(legend.position = "top",
+        legend.title = element_blank(),
+        axis.title = element_text(size = 14),
+        axis.text  = element_text(size = 12)) +
+  labs(title = "Cumulative species accumulation: true vs. DP-only visibility",
+       subtitle = "FS lag = 0. DP lag added; only records reported before 2020 are visible (tail flattens).",
+       x = "Year", y = "Cumulative species")
+
+p
+# ggsave("cum_true_vs_DP_CV_by2019.png", p, width = 7.2, height = 4.6, dpi = 600)
+
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+years <- 1920:2019
+end_year <- 2019
+m <- 10   # years for TFI slopes
+M <- 20   # years for tail AUC
+
+# True cumulative (no lags)
+true_curve <- sim_spp %>%
+  count(Year = factor(Naturalization_Year, levels = years), name = "Taxa") %>%
+  mutate(Year = as.integer(as.character(Year))) %>%
+  complete(Year = years, fill = list(Taxa = 0)) %>%
+  arrange(Year) %>%
+  mutate(cum_true = cumsum(Taxa)) %>%
+  select(Year, cum_true)
+
+# Helper: visible-by-2019 cumulative for a given DP lag df (censor by Report_Year < 2020)
+visible_curve <- function(dp_df) {
+  df <- sim_spp %>%
+    transmute(Voucher_Year = Naturalization_Year,  # FS lag = 0
+              Report_Year  = Voucher_Year + dp_df$DP_Lag) %>%
+    filter(Report_Year < 2020)
+
+  df %>%
+    count(Year = factor(Voucher_Year, levels = years), name = "Taxa_vis") %>%
+    mutate(Year = as.integer(as.character(Year))) %>%
+    complete(Year = years, fill = list(Taxa_vis = 0)) %>%
+    arrange(Year) %>%
+    mutate(cum_vis = cumsum(Taxa_vis)) %>%
+    select(Year, cum_vis)
+}
+
+curves <- list(
+  `CV = 0.5` = DP_Lag_0.5,
+  `CV = 1.0` = DP_Lag_1,
+  `CV = 2.0` = DP_Lag_2
+) %>%
+  imap_dfr(function(dp_df, lab) {
+    vis <- visible_curve(dp_df)
+    full <- true_curve %>% left_join(vis, by = "Year")
+    full$Series <- lab
+    full
+  })
+
+# compute metrics per CV
+metrics <- curves %>%
+  group_by(Series) %>%
+  arrange(Year, .by_group = TRUE) %>%
+  mutate(
+    # yearly increments (reported vs true) for slope calc
+    inc_true = c(cum_true[1], diff(cum_true)),
+    inc_vis  = c(cum_vis[1],  diff(cum_vis))
+  ) %>%
+  summarise(
+    # Tail Flattening Index (reported increments)
+    slope_last   = mean(inc_vis[Year %in% ((end_year - m + 1):end_year)], na.rm = TRUE),
+    slope_prev   = mean(inc_vis[Year %in% ((end_year - 2*m + 1):(end_year - m))], na.rm = TRUE),
+    TFI          = ifelse(slope_prev > 0, slope_last / slope_prev, NA_real_),
+
+    # % visible at end
+    pct_visible_end = last(cum_vis) / last(cum_true),
+
+    # Tail AUC gap (last M years)
+    auc_gap = sum((cum_true - cum_vis)[Year %in% ((end_year - M + 1):end_year)], na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+metrics
+
+```
+
+
+```{r}
+curves   # columns: Year, cum_true, cum_vis, Series
+
+```
+
+```{r}
+
+
+area_bias <- curves %>%
+  group_by(Series) %>%
+  summarise(
+    Area_true = sum(cum_true),
+    Area_diff = sum(pmax(cum_true - cum_vis, 0)),  # ensure no negative
+    Norm_bias = Area_diff / Area_true
+  ) %>%
+  arrange(Series)
+
+area_bias
+
+```
+
+```{r}
+ggplot(curves, aes(x = Year, y = cum_true - cum_vis, color = Series)) +
+  geom_line(size = 1) +
+  theme_classic() +
+  labs(y = "Difference (True – Observed cumulative)",
+       title = "Deviance between true and observed invasion curves")
+
+```
+
+
+
+
+# distribution types
+
+```{r}
+# --- Libraries --------------------------------------------------------------
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(ggplot2)
+
+# --- Settings ---------------------------------------------------------------
+mean_lag  <- 10                          # target mean lag (years)
+cv_vals   <- c(0.5, 1.0, 2.0, 3.0, 4.0, 5.0)            # CVs to compare
+dists     <- c("Gamma", "Lognormal", "Weibull")
+years_window <- 1920:2019
+end_year     <- max(years_window)
+n_spp        <- nrow(sim_spp)
+
+# --- Helpers: random generators matched to (mean, CV) -----------------------
+
+# Gamma: shape = 1/CV^2; rate = shape/mean
+rgamma_mean_cv_n <- function(n, mean, cv) {
+  shape <- 1/(cv^2)
+  rate  <- shape/mean
+  round(stats::rgamma(n, shape = shape, rate = rate))
+}
+
+# Lognormal:
+# Let sigma^2 = log(1 + CV^2); mu_log = log(mean) - 0.5*sigma^2
+rlnorm_mean_cv_n <- function(n, mean, cv) {
+  sigma2 <- log(1 + cv^2)
+  mu_log <- log(mean) - 0.5 * sigma2
+  round(stats::rlnorm(n, meanlog = mu_log, sdlog = sqrt(sigma2)))
+}
+
+# Weibull: solve for shape k from CV, then scale lambda = mean / Gamma(1 + 1/k)
+# CV^2 = Gamma(1+2/k)/Gamma(1+1/k)^2 - 1
+rweib_mean_cv_n <- function(n, mean, cv, k_bounds = c(0.1, 20)) {
+  f_cv <- function(k) {
+    g1 <- gamma(1 + 1/k)
+    g2 <- gamma(1 + 2/k)
+    sqrt(g2/(g1^2) - 1) - cv
+  }
+  # solve for k (shape)
+  root <- try(uniroot(f_cv, interval = k_bounds), silent = TRUE)
+  if (inherits(root, "try-error")) stop("Weibull shape solver failed; adjust k_bounds.")
+  k <- root$root
+  lambda <- mean / gamma(1 + 1/k)
+  # stats::rweibull uses shape = k, scale = lambda
+  round(stats::rweibull(n, shape = k, scale = lambda))
+}
+
+# Wrapper to draw n lags for a given distribution name
+rdp_mean_cv_n <- function(n, mean, cv, dist_name) {
+  switch(dist_name,
+         "Gamma"    = rgamma_mean_cv_n(n, mean, cv),
+         "Lognormal"= rlnorm_mean_cv_n(n, mean, cv),
+         "Weibull"  = rweib_mean_cv_n(n, mean, cv),
+         stop("Unknown dist: ", dist_name))
+}
+
+# --- TRUE curve (no lags) ---------------------------------------------------
+true_curve <- sim_spp %>%
+  count(Year = factor(Naturalization_Year, levels = years_window), name = "Taxa") %>%
+  mutate(Year = as.integer(as.character(Year))) %>%
+  complete(Year = years_window, fill = list(Taxa = 0)) %>%
+  arrange(Year) %>%
+  mutate(cum_true = cumsum(Taxa)) %>%
+  select(Year, cum_true)
+
+# --- Visible curve builder: DP-only, censor on Report_Year < 2020 -----------
+visible_curve_from_lags <- function(dp_lag_vec) {
+  stopifnot(length(dp_lag_vec) == n_spp)
+  df <- sim_spp %>%
+    transmute(
+      Voucher_Year = Naturalization_Year,        # FS lag = 0
+      Report_Year  = Voucher_Year + dp_lag_vec   # add DP lag
+    ) %>%
+    filter(Report_Year < 2020)
+
+  df %>%
+    count(Year = factor(Voucher_Year, levels = years_window), name = "Taxa_vis") %>%
+    mutate(Year = as.integer(as.character(Year))) %>%
+    complete(Year = years_window, fill = list(Taxa_vis = 0)) %>%
+    arrange(Year) %>%
+    mutate(cum_vis = cumsum(Taxa_vis)) %>%
+    select(Year, cum_vis)
+}
+
+# --- Build DP-lag sets for each (dist, CV), compute curves ------------------
+set.seed(123)
+
+curves <- cross_df(list(Dist = dists, CV = cv_vals)) %>%
+  mutate(Label = paste(Dist, paste0("CV=", CV))) %>%
+  pmap_dfr(function(Dist, CV, Label){
+    dp_vec <- rdp_mean_cv_n(n_spp, mean_lag, CV, Dist)
+    vis    <- visible_curve_from_lags(dp_vec)
+    out    <- true_curve %>% left_join(vis, by = "Year")
+    out$Dist  <- Dist
+    out$CV    <- CV
+    out$Label <- Label
+    out
+  })
+
+# --- Area-based bias (whole window) -----------------------------------------
+area_bias <- curves %>%
+  group_by(Dist, CV) %>%
+  summarise(
+    Area_true = sum(cum_true, na.rm = TRUE),
+    Area_diff = sum(pmax(cum_true - cum_vis, 0), na.rm = TRUE),
+    Norm_bias = Area_diff / Area_true,          # fraction
+    .groups = "drop"
+  )
+
+print(area_bias)
+
+# --- Plot 1: Cumulative curves overlayed by distribution (example CVs) ------
+# pick a small set of CVs to show shape differences clearly:
+show_CVs <- cv_vals
+plot_df  <- curves %>% filter(CV %in% show_CVs)
+
+ggplot(plot_df, aes(Year)) +
+  geom_line(aes(y = cum_true), color = "grey55", linewidth = 1.1) +
+  geom_line(aes(y = cum_vis, color = Dist, linetype = factor(CV)), linewidth = 1.0) +
+  scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2019)) +
+  scale_linetype_discrete(name = "CV") +
+  theme_classic() +
+  theme(legend.position = "top") +
+  labs(title = "True vs. visible accumulation (DP-only) across distributions",
+       subtitle = paste0("Mean lag = ", mean_lag, " yrs; censor Report_Year < 2020"),
+       y = "Cumulative species", color = "Lag distribution")
+
+# --- Plot 2: Bias vs CV for each distribution -------------------------------
+ggplot(area_bias, aes(x = CV, y = 100*Norm_bias, color = Dist)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 10, linetype = "dashed", color = "gray40") +
+  theme_classic(base_size = 13) +
+  labs(x = "Coefficient of variation (CV) of processing lags",
+       y = "Normalized bias (% area between curves)",
+       title = "Bias vs CV by distribution",
+       subtitle = "Dashed line = 10% threshold")
+
+```
+
+
+
+
+
+
